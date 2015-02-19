@@ -12,3 +12,11 @@ type JSONTile struct {
 	Count int `json:"count,omitempty"`
 	Index int `json:"index,omitempty"`
 }
+
+func (t *Tile) Open() bool {
+	return t.Object.Int("type") == 0 //open spot
+}
+
+func (t *Tile) Count() int {
+	return t.Object.Int("count")
+}

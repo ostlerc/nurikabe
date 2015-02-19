@@ -29,17 +29,118 @@ type JSONGrid struct {
 	Tiles []JSONTile `json:"tiles"`
 }
 
-func (g *Grid) StatusFromTile(t *Tile) string {
-	name := "open"
-	switch t.Object.Int("type") {
-	case 1:
-		name = "wall"
-	case 2:
-		name = "nest"
-	case 3:
-		name = "food"
+func (g *Grid) CheckWin() {
+	if !g.hasBlock() && g.singleWall() && g.gardensAreCorrect() {
+		fmt.Println("WINNER")
 	}
-	return fmt.Sprintf("%v %v %v", name, t.x, t.y)
+}
+
+// This function help detect quad blocks
+func (g *Grid) hasBlock() bool {
+	for i, _ := range g.Tiles {
+		if i/g.ColCount == g.RowCount-1 || //bottom of grid
+			i%g.ColCount == g.ColCount-1 || //right side of grid
+			g.openAt(i) ||
+			g.openAt(i+1) ||
+			g.openAt(i+g.ColCount) ||
+			g.openAt(i+g.ColCount+1) {
+			continue
+		}
+		return true
+	}
+	return false
+}
+
+func (g *Grid) gardensAreCorrect() bool {
+	for i, _ := range g.Tiles {
+		if c := g.Tiles[i].Count(); c > 0 {
+			openTiles := make(map[int]bool)
+			if x := g.markOpen(i, openTiles); x != c {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+func (g *Grid) singleWall() bool {
+	firstWall := -1
+	wallCount := 0
+	for i, _ := range g.Tiles {
+		if !g.openAt(i) {
+			if firstWall == -1 {
+				firstWall = i
+			}
+			wallCount++
+		}
+	}
+
+	if firstWall == -1 || wallCount == 0 {
+		return false
+	}
+
+	found := make(map[int]bool)
+
+	return g.markClosed(firstWall, found) == wallCount
+}
+
+func (g *Grid) markOpen(i int, found map[int]bool) int {
+	if i < 0 || i >= len(g.Tiles) {
+		return 0
+	}
+
+	if _, ok := found[i]; ok || !g.openAt(i) {
+		return 0
+	}
+
+	found[i] = true
+	ret := 1
+
+	if i/g.ColCount != g.RowCount-1 { // not bottom of grid
+		ret += g.markOpen(i+g.ColCount, found)
+	}
+
+	if i >= g.ColCount { // not top of grid
+		ret += g.markOpen(i-g.ColCount, found)
+	}
+
+	if i%g.ColCount != g.RowCount-1 { // not right side of grid
+		ret += g.markOpen(i+1, found)
+		ret += g.markOpen(i+g.ColCount+1, found)
+		ret += g.markOpen(i-g.ColCount+1, found)
+	}
+
+	if i%g.ColCount != 0 { // not left side of grid
+		ret += g.markOpen(i-1, found)
+		ret += g.markOpen(i+g.ColCount-1, found)
+		ret += g.markOpen(i-g.ColCount-1, found)
+	}
+
+	return ret
+}
+
+func (g *Grid) markClosed(i int, found map[int]bool) int {
+	if i < 0 || i >= len(g.Tiles) {
+		return 0
+	}
+
+	if _, ok := found[i]; ok || g.openAt(i) {
+		return 0
+	}
+
+	found[i] = true
+	ret := 1
+
+	ret += g.markClosed(i+1, found)
+	ret += g.markClosed(i-1, found)
+	ret += g.markClosed(i+g.ColCount, found)
+	ret += g.markClosed(i-g.ColCount, found)
+
+	return ret
+}
+
+func (g *Grid) openAt(i int) bool {
+	return g.Tiles[i].Open()
 }
 
 func (g *Grid) createTile() *Tile {
@@ -124,7 +225,7 @@ func (g *Grid) BuildGrid(rows, cols int) {
 	}
 }
 
-func (g *Grid) ClearGrid() {
+func (g *Grid) Clear() {
 	for _, v := range g.Tiles {
 		v.Object.Set("type", 0)
 	}
