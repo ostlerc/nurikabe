@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 
 	"gopkg.in/qml.v1"
@@ -29,17 +28,18 @@ type JSONGrid struct {
 	Tiles []JSONTile `json:"tiles"`
 }
 
-func (g *Grid) CheckWin() {
+func (g *Grid) CheckWin() bool {
 	if !g.hasBlock() && g.singleWall() && g.gardensAreCorrect() {
-		fmt.Println("WINNER")
+		return true
 	}
+	return false
 }
 
 // This function help detect quad blocks
 func (g *Grid) hasBlock() bool {
 	for i, _ := range g.Tiles {
-		if i/g.ColCount == g.RowCount-1 || //bottom of grid
-			i%g.ColCount == g.ColCount-1 || //right side of grid
+		if i/g.ColCount == g.RowCount-1 || // bottom of grid
+			i%g.ColCount == g.ColCount-1 || // right side of grid
 			g.openAt(i) ||
 			g.openAt(i+1) ||
 			g.openAt(i+g.ColCount) ||
@@ -152,52 +152,16 @@ func (g *Grid) createTile() *Tile {
 	return tile
 }
 
-func (g *Grid) SaveGrid(filename string) {
-	filename = filename[7:]
-	jg := &JSONGrid{
-		Rows: g.RowCount,
-		Cols: g.ColCount,
-	}
-	tiles := make([]JSONTile, 0, jg.Rows*jg.Cols)
-
-	for _, v := range g.Tiles {
-		c := v.Object.Int("count")
-		if c == 0 { //skip non number node
-			continue
-		}
-		t := JSONTile{
-			Count: v.Object.Int("count"),
-			Index: v.Object.Int("index"),
-		}
-		tiles = append(tiles, t)
-	}
-
-	jg.Tiles = tiles
-
-	dat, err := json.Marshal(jg)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	fmt.Println(string(dat))
-	err = ioutil.WriteFile(filename, dat, 0644)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	fmt.Println("Successfully Saved", filename)
-}
-
 func (g *Grid) LoadGrid(input io.Reader) {
 	r := bufio.NewReader(input)
 	dat, err := r.ReadBytes('\n')
-	if err != nil {
-		log.Fatal(err)
+	if err != nil && err != io.EOF {
+		log.Fatal("error reading", err)
 	}
 	var newg JSONGrid
 	err = json.Unmarshal(dat, &newg)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("error unmarshalling", err)
 		return
 	}
 	g.BuildGrid(newg.Rows, newg.Cols)
@@ -216,17 +180,11 @@ func (g *Grid) BuildGrid(rows, cols int) {
 	g.ColCount = cols
 	g.Grid.Set("columns", g.ColCount)
 
-	fmt.Println("Building a", g.RowCount, g.ColCount, "grid")
+	//fmt.Println("Building a", g.RowCount, g.ColCount, "grid")
 	size := g.RowCount * g.ColCount
 	g.Tiles = make([]*Tile, size, size)
 	for n := 0; n < size; n++ {
 		g.Tiles[n] = g.createTile()
 		g.Tiles[n].Object.Set("index", n)
-	}
-}
-
-func (g *Grid) Clear() {
-	for _, v := range g.Tiles {
-		v.Object.Set("type", 0)
 	}
 }

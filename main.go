@@ -53,7 +53,7 @@ func run() error {
 	if (stat.Mode() & os.ModeCharDevice) == 0 {
 		grid.LoadGrid(os.Stdin)
 	} else {
-		grid.BuildGrid(5, 5)
+		grid.BuildGrid(3, 3)
 	}
 
 	win.Show()

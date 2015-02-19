@@ -20,3 +20,7 @@ func (t *Tile) Open() bool {
 func (t *Tile) Count() int {
 	return t.Object.Int("count")
 }
+
+func (t *Tile) SetType(_t int) {
+	t.Object.Set("type", _t)
+}
