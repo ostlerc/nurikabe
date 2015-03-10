@@ -1,4 +1,4 @@
-package main
+package validator
 
 import (
 	"io"
@@ -6,12 +6,15 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ostlerc/nurikabe/grid"
+	"github.com/ostlerc/nurikabe/tile"
+
 	"gopkg.in/qml.v1"
 )
 
 type gridTest struct {
 	testNum int
-	g       *Grid
+	g       *grid
 	block   bool
 	wall    bool
 	gardens bool
@@ -22,14 +25,17 @@ var gridTests []gridTest
 var tileComponent qml.Object
 var gridComponent qml.Object
 var engine *qml.Engine
+var valid validator.Validator
 
 func init() {
 	qml.SetupTesting()
+	valid := validator.NewNurikabe()
 }
 
-func loadGrid(input io.Reader, closed []int) *Grid {
-	g := &Grid{
-		TileComp: &Tile{Object: tileComponent},
+func loadGrid(input io.Reader, closed []int) *grid {
+	g := &grid{
+		TileComp: &tile.Tile{Object: tileComponent},
+		valid:    valid,
 	}
 
 	g.Grid = gridComponent.Create(nil)
@@ -38,7 +44,7 @@ func loadGrid(input io.Reader, closed []int) *Grid {
 	return g
 }
 
-func setClosed(idx []int, g *Grid) {
+func setClosed(idx []int, g *grid) {
 	for _, i := range idx {
 		g.Tiles[i].SetType(1)
 	}
