@@ -1,8 +1,6 @@
 package validator
 
 import (
-	"fmt"
-
 	"github.com/ostlerc/nurikabe/tile"
 )
 
@@ -21,13 +19,12 @@ func (n *nurikabe) CheckWin(Tiles []*tile.Tile, row, col int) bool {
 	n.row = row
 	n.col = col
 	if !n.hasBlock() && n.singleWall() && n.gardensAreCorrect() {
-		fmt.Println("WINNER!")
 		return true
 	}
 	return false
 }
 
-// This function help detect quad blocks
+// This function detects quad blocks
 func (n *nurikabe) hasBlock() bool {
 	for i, _ := range n.tiles {
 		if i/n.col == n.row-1 || // bottom of grid
@@ -47,6 +44,7 @@ func (n *nurikabe) openAt(i int) bool {
 	return n.tiles[i].Open()
 }
 
+// This function counts 9-connected open squares at each garden count spot
 func (n *nurikabe) gardensAreCorrect() bool {
 	for i, _ := range n.tiles {
 		if c := n.tiles[i].Count(); c > 0 {
@@ -59,6 +57,7 @@ func (n *nurikabe) gardensAreCorrect() bool {
 	return true
 }
 
+// This function determines if there is one contiguous 4-connected wall
 func (n *nurikabe) singleWall() bool {
 	firstWall := -1
 	wallCount := 0

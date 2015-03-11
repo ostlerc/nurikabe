@@ -37,9 +37,12 @@ type jsonTile struct {
 
 func New(v validator.GridValidator, g qml.Object, status qml.Object) *grid {
 	return &grid{
-		valid:      v,
 		grid:       g,
 		statusText: status,
+		valid:      v,
+		tiles:      make([]*tile.Tile, 0),
+		rows:       0,
+		cols:       0,
 	}
 }
 
@@ -73,7 +76,9 @@ func (g *grid) BuildGrid(rows, cols int) {
 	}
 	g.rows = rows
 	g.cols = cols
-	g.grid.Set("columns", g.cols)
+	if g.grid != nil {
+		g.grid.Set("columns", g.cols)
+	}
 
 	size := g.rows * g.cols
 	g.tiles = make([]*tile.Tile, size, size)
