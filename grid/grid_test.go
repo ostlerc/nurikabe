@@ -7,8 +7,6 @@ import (
 
 	"github.com/ostlerc/nurikabe/tile"
 	"github.com/ostlerc/nurikabe/validator"
-
-	"gopkg.in/qml.v1"
 )
 
 type gridTest struct {
@@ -17,17 +15,13 @@ type gridTest struct {
 	win     bool
 }
 
-var engine *qml.Engine
-
 func init() {
-	qml.SetupTesting()
 	tile.SetupTesting()
 }
 
 func loadGrid(input io.Reader, closed []int) *Grid {
 	g := New(validator.NewNurikabe(), nil)
 
-	g.grid = tile.Fake()
 	g.LoadGrid(input)
 	setClosed(closed, g)
 	return g
@@ -40,8 +34,6 @@ func setClosed(idx []int, g *Grid) {
 }
 
 func TestWinner(t *testing.T) {
-	engine = qml.NewEngine()
-
 	gridTests := []gridTest{
 		{1, loadGrid(strings.NewReader(`{"rows":2,"cols":2}`), []int{0, 1, 2, 3}), false},
 		{2, loadGrid(strings.NewReader(`{"rows":3,"cols":3}`), []int{1, 2, 3, 4}), true},
@@ -64,12 +56,12 @@ func TestWinner(t *testing.T) {
 }
 
 func TestBuildGrid(t *testing.T) {
-	g := &Grid{grid: tile.Fake()}
+	g := &Grid{}
 	g.BuildGrid(4, 6)
-	if g.cols != 6 {
-		t.Fatal("Invalid columns ", g.cols)
+	if g.Cols != 6 {
+		t.Fatal("Invalid columns ", g.Cols)
 	}
-	if g.rows != 4 {
-		t.Fatal("Invalid rows ", g.rows)
+	if g.Rows != 4 {
+		t.Fatal("Invalid rows ", g.Rows)
 	}
 }

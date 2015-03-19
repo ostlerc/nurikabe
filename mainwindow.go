@@ -3,7 +3,6 @@ package main
 import (
 	"log"
 	"os"
-	"time"
 
 	"github.com/ostlerc/nurikabe/grid"
 	"github.com/ostlerc/nurikabe/validator"
@@ -13,16 +12,15 @@ import (
 
 type window struct {
 	g          *grid.Grid
+	qmlgrid    qml.Object
 	statusText qml.Object
 }
 
 func (w *window) TileChecked() {
 	if w.g.CheckWin() {
-		go func() {
-			w.statusText.Set("text", "Winner!")
-			time.Sleep(5 * time.Second)
-			w.statusText.Set("text", "Nurikabe")
-		}()
+		w.statusText.Set("text", "Winner!")
+	} else {
+		w.statusText.Set("text", "Nurikabe")
 	}
 }
 
@@ -33,7 +31,8 @@ func CreateMainWindow(engine *qml.Engine) {
 	}
 
 	comp := component.CreateWindow(nil)
-	g := grid.New(validator.NewNurikabe(), comp.Root().ObjectByName("grid"))
+	qmlgrid := comp.Root().ObjectByName("grid")
+	g := grid.New(validator.NewNurikabe(), qmlgrid)
 
 	stat, _ := os.Stdin.Stat()
 	if (stat.Mode() & os.ModeCharDevice) == 0 {
@@ -46,9 +45,14 @@ func CreateMainWindow(engine *qml.Engine) {
 	}
 
 	context := engine.Context()
-	window := &window{g: g, statusText: comp.Root().ObjectByName("statusText")}
+	window := &window{
+		g:          g,
+		qmlgrid:    qmlgrid,
+		statusText: comp.Root().ObjectByName("statusText"),
+	}
 	context.SetVar("grid", g)
 	context.SetVar("window", window)
+	window.qmlgrid.Set("columns", g.Cols)
 
 	comp.Show()
 	comp.Wait()

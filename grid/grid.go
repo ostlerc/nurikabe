@@ -11,13 +11,13 @@ import (
 )
 
 type Grid struct {
-	grid  tile.PropertyHolder
-	valid validator.GridValidator
+	valid  validator.GridValidator
+	parent interface{}
 
 	tiles []*tile.Tile
 
-	cols int
-	rows int
+	Cols int
+	Rows int
 }
 
 // json member variables must be external for unmarshalling
@@ -32,18 +32,18 @@ type jsonTile struct {
 	Index int `json:"index,omitempty"`
 }
 
-func New(v validator.GridValidator, g tile.PropertyHolder) *Grid {
+func New(v validator.GridValidator, parent interface{}) *Grid {
 	return &Grid{
-		grid:  g,
-		valid: v,
-		tiles: make([]*tile.Tile, 0),
-		rows:  0,
-		cols:  0,
+		valid:  v,
+		parent: parent,
+		tiles:  make([]*tile.Tile, 0),
+		Rows:   0,
+		Cols:   0,
 	}
 }
 
 func (g *Grid) CheckWin() bool {
-	return g.valid.CheckWin(g.tiles, g.rows, g.cols)
+	return g.valid.CheckWin(g.tiles, g.Rows, g.Cols)
 }
 
 func (g *Grid) LoadGrid(input io.Reader) error {
@@ -70,14 +70,13 @@ func (g *Grid) BuildGrid(rows, cols int) {
 		b.Properties.Set("visible", false)
 		b.Properties.Destroy()
 	}
-	g.rows = rows
-	g.cols = cols
-	g.grid.Set("columns", g.cols)
+	g.Rows = rows
+	g.Cols = cols
 
-	size := g.rows * g.cols
+	size := g.Rows * g.Cols
 	g.tiles = make([]*tile.Tile, size, size)
 	for n := 0; n < size; n++ {
-		g.tiles[n] = tile.New(g.grid)
+		g.tiles[n] = tile.New(g.parent)
 		g.tiles[n].Properties.Set("index", n)
 	}
 }
