@@ -21,7 +21,7 @@ func run() error {
 	engine := qml.NewEngine()
 
 	tile.Setup(engine, "qml/tile.qml")
-	MainWindow(engine)
+	CreateMainWindow(engine)
 
 	return nil
 }

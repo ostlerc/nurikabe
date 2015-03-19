@@ -23,6 +23,10 @@ func (f *fakePropertyHolder) Int(s string) int {
 func (f *fakePropertyHolder) Set(s string, i interface{}) { f.m[s], _ = i.(int) }
 func (f *fakePropertyHolder) Destroy()                    {}
 
+func Fake() PropertyHolder {
+	return &fakePropertyHolder{m: make(map[string]int)}
+}
+
 func SetupTesting() {
 	TileCreator = &fakeCreator{}
 }

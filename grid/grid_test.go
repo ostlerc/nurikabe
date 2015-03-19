@@ -13,7 +13,7 @@ import (
 
 type gridTest struct {
 	testNum int
-	g       *grid
+	g       *Grid
 	win     bool
 }
 
@@ -24,15 +24,16 @@ func init() {
 	tile.SetupTesting()
 }
 
-func loadGrid(input io.Reader, closed []int) *grid {
-	g := New(validator.NewNurikabe(), nil, nil)
+func loadGrid(input io.Reader, closed []int) *Grid {
+	g := New(validator.NewNurikabe(), nil)
 
+	g.grid = tile.Fake()
 	g.LoadGrid(input)
 	setClosed(closed, g)
 	return g
 }
 
-func setClosed(idx []int, g *grid) {
+func setClosed(idx []int, g *Grid) {
 	for _, i := range idx {
 		g.tiles[i].SetType(1)
 	}
@@ -63,7 +64,7 @@ func TestWinner(t *testing.T) {
 }
 
 func TestBuildGrid(t *testing.T) {
-	g := &grid{}
+	g := &Grid{grid: tile.Fake()}
 	g.BuildGrid(4, 6)
 	if g.cols != 6 {
 		t.Fatal("Invalid columns ", g.cols)

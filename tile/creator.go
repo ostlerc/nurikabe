@@ -12,8 +12,8 @@ type QMLObjectCreator struct {
 	o qml.Object
 }
 
-func (q *QMLObjectCreator) Create(*qml.Context) PropertyHolder {
-	return q.o
+func (q *QMLObjectCreator) Create(c *qml.Context) PropertyHolder {
+	return q.o.Create(c)
 }
 
 type Creator interface {

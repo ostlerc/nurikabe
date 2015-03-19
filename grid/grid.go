@@ -8,14 +8,11 @@ import (
 
 	"github.com/ostlerc/nurikabe/tile"
 	"github.com/ostlerc/nurikabe/validator"
-
-	"gopkg.in/qml.v1"
 )
 
-type grid struct {
-	grid       qml.Object
-	statusText qml.Object
-	valid      validator.GridValidator
+type Grid struct {
+	grid  tile.PropertyHolder
+	valid validator.GridValidator
 
 	tiles []*tile.Tile
 
@@ -35,22 +32,21 @@ type jsonTile struct {
 	Index int `json:"index,omitempty"`
 }
 
-func New(v validator.GridValidator, g qml.Object, status qml.Object) *grid {
-	return &grid{
-		grid:       g,
-		statusText: status,
-		valid:      v,
-		tiles:      make([]*tile.Tile, 0),
-		rows:       0,
-		cols:       0,
+func New(v validator.GridValidator, g tile.PropertyHolder) *Grid {
+	return &Grid{
+		grid:  g,
+		valid: v,
+		tiles: make([]*tile.Tile, 0),
+		rows:  0,
+		cols:  0,
 	}
 }
 
-func (g *grid) CheckWin() bool {
+func (g *Grid) CheckWin() bool {
 	return g.valid.CheckWin(g.tiles, g.rows, g.cols)
 }
 
-func (g *grid) LoadGrid(input io.Reader) error {
+func (g *Grid) LoadGrid(input io.Reader) error {
 	r := bufio.NewReader(input)
 	dat, err := r.ReadBytes('\n')
 	if err != nil && err != io.EOF {
@@ -69,16 +65,14 @@ func (g *grid) LoadGrid(input io.Reader) error {
 	return nil
 }
 
-func (g *grid) BuildGrid(rows, cols int) {
+func (g *Grid) BuildGrid(rows, cols int) {
 	for _, b := range g.tiles {
 		b.Properties.Set("visible", false)
 		b.Properties.Destroy()
 	}
 	g.rows = rows
 	g.cols = cols
-	if g.grid != nil {
-		g.grid.Set("columns", g.cols)
-	}
+	g.grid.Set("columns", g.cols)
 
 	size := g.rows * g.cols
 	g.tiles = make([]*tile.Tile, size, size)
