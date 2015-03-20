@@ -1,0 +1,11 @@
+add validator tests
+add generation
+add dumb solver
+add better solver
+generate levels
+ - 10 easy
+ - 10 medium
+ - 10 hard
+
+add main menu
+ - add stat keeping
