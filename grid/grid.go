@@ -24,7 +24,7 @@ type Grid struct {
 type jsonGrid struct {
 	Rows  int        `json:"rows"`
 	Cols  int        `json:"cols"`
-	Tiles []jsonTile `json:"tiles"`
+	Tiles []jsonTile `json:"tiles,omitempty"`
 }
 
 type jsonTile struct {
@@ -61,6 +61,7 @@ func (g *Grid) LoadGrid(input io.Reader) error {
 	for _, t := range newg.Tiles {
 		g.tiles[t.Index].Properties.Set("type", 0)
 		g.tiles[t.Index].Properties.Set("count", t.Count)
+		g.tiles[t.Index].Properties.Set("index", t.Index)
 	}
 	return nil
 }
@@ -79,4 +80,27 @@ func (g *Grid) BuildGrid(rows, cols int) {
 		g.tiles[n] = tile.New(g.parent)
 		g.tiles[n].Properties.Set("index", n)
 	}
+}
+
+func (g *Grid) Json() ([]byte, error) {
+	jTiles := make([]jsonTile, 0)
+	for _, t := range g.tiles {
+		c := t.Properties.Int("count")
+		i := t.Properties.Int("index")
+		if c != 0 {
+			jTiles = append(jTiles, jsonTile{
+				Count: c,
+				Index: i,
+			})
+		}
+	}
+	if len(jTiles) == 0 {
+		jTiles = nil
+	}
+	jGrid := &jsonGrid{
+		Rows:  g.Rows,
+		Cols:  g.Cols,
+		Tiles: jTiles,
+	}
+	return json.Marshal(jGrid)
 }
