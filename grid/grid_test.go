@@ -34,26 +34,32 @@ func setClosed(idx []int, g *Grid) {
 	}
 }
 
-func TestWinner(t *testing.T) {
-	gridTests := []gridTest{
-		{1, `{"rows":2,"cols":2}`, []int{0, 1, 2, 3}, false},
-		{2, `{"rows":3,"cols":3}`, []int{1, 2, 3, 4}, true},
-		{3, `{"rows":3,"cols":3}`, []int{2, 3, 5, 6}, true},
-		{4, `{"rows":3,"cols":3}`, []int{1, 2, 4, 5}, false},
-		{5, `{"rows":3,"cols":3}`, []int{3, 4, 6, 7}, false},
-		{6, `{"rows":3,"cols":3}`, []int{4, 5, 7, 8}, false},
-		{7, `{"rows":3,"cols":3}`, []int{4, 5, 7}, true},
-		{8, `{"rows":3,"cols":3}`, []int{0, 2, 5}, false},
-		{9, `{"rows":3,"cols":3,"tiles":[{"count":2},{"count":3,"index":5}]}`, []int{}, false},
-		{10, `{"rows":3,"cols":3,"tiles":[{"count":2},{"count":3,"index":5}]}`, []int{1, 4, 6, 7}, true},
-		{11, `{"rows":3,"cols":3,"tiles":[{"count":2},{"count":3,"index":5}]}`, []int{1, 4, 6}, false},
-	}
+var gridTests = []gridTest{
+	{1, `{"rows":2,"cols":2}`, []int{0, 1, 2, 3}, false},
+	{2, `{"rows":3,"cols":3}`, []int{1, 2, 3, 4}, true},
+	{3, `{"rows":3,"cols":3}`, []int{2, 3, 5, 6}, true},
+	{4, `{"rows":3,"cols":3}`, []int{1, 2, 4, 5}, false},
+	{5, `{"rows":3,"cols":3}`, []int{3, 4, 6, 7}, false},
+	{6, `{"rows":3,"cols":3}`, []int{4, 5, 7, 8}, false},
+	{7, `{"rows":3,"cols":3}`, []int{4, 5, 7}, true},
+	{8, `{"rows":3,"cols":3}`, []int{0, 2, 5}, false},
+	{9, `{"rows":3,"cols":3,"tiles":[{"count":2},{"count":3,"index":5}]}`, []int{}, false},
+	{10, `{"rows":3,"cols":3,"tiles":[{"count":2},{"count":3,"index":5}]}`, []int{1, 4, 6, 7}, true},
+	{11, `{"rows":3,"cols":3,"tiles":[{"count":2},{"count":3,"index":5}]}`, []int{1, 4, 6}, false},
+}
 
+func TestWinner(t *testing.T) {
 	for i, gt := range gridTests {
 		grid := loadGrid(strings.NewReader(gt.json), gt.closed)
 		if gt.win != grid.CheckWin() {
 			t.Fatal("win invalid for test", i, "(", gt.testNum, ")")
 		}
+	}
+}
+
+func TestJson(t *testing.T) {
+	for i, gt := range gridTests {
+		grid := loadGrid(strings.NewReader(gt.json), gt.closed)
 		if json, err := grid.Json(); err != nil || string(json) != gt.json {
 			t.Fatal("Invalid json", i, string(json), "(", gt.testNum, ")")
 		}
