@@ -20,7 +20,7 @@ func main() {
 func run() error {
 	engine := qml.NewEngine()
 
-	tile.Setup(engine, "qml/tile.qml")
+	tile.SetupGui(engine, "qml/tile.qml")
 	CreateMainWindow(engine)
 
 	return nil

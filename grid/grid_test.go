@@ -5,7 +5,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ostlerc/nurikabe/tile"
 	"github.com/ostlerc/nurikabe/validator"
 )
 
@@ -14,10 +13,6 @@ type gridTest struct {
 	json    string
 	closed  []int
 	win     bool
-}
-
-func init() {
-	tile.SetupTesting()
 }
 
 func loadGrid(input io.Reader, closed []int) *Grid {
@@ -30,7 +25,7 @@ func loadGrid(input io.Reader, closed []int) *Grid {
 
 func setClosed(idx []int, g *Grid) {
 	for _, i := range idx {
-		g.tiles[i].SetType(1)
+		g.Tiles[i].SetType(1)
 	}
 }
 

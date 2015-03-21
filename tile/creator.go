@@ -12,15 +12,15 @@ type QMLObjectCreator struct {
 	o qml.Object
 }
 
-func (q *QMLObjectCreator) Create(c *qml.Context) PropertyHolder {
-	return q.o.Create(c)
+func (q *QMLObjectCreator) Create() PropertyHolder {
+	return q.o.Create(nil)
 }
 
 type Creator interface {
-	Create(*qml.Context) PropertyHolder
+	Create() PropertyHolder
 }
 
-func Setup(engine *qml.Engine, path string) {
+func SetupGui(engine *qml.Engine, path string) {
 	tileComponent, err := engine.LoadFile(path)
 	if err != nil {
 		panic(err)

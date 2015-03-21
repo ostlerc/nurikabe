@@ -14,7 +14,7 @@ type Grid struct {
 	valid  validator.GridValidator
 	parent interface{}
 
-	tiles []*tile.Tile
+	Tiles []*tile.Tile
 
 	Cols int
 	Rows int
@@ -36,14 +36,14 @@ func New(v validator.GridValidator, parent interface{}) *Grid {
 	return &Grid{
 		valid:  v,
 		parent: parent,
-		tiles:  make([]*tile.Tile, 0),
+		Tiles:  make([]*tile.Tile, 0),
 		Rows:   0,
 		Cols:   0,
 	}
 }
 
 func (g *Grid) CheckWin() bool {
-	return g.valid.CheckWin(g.tiles, g.Rows, g.Cols)
+	return g.valid.CheckWin(g.Tiles, g.Rows, g.Cols)
 }
 
 func (g *Grid) LoadGrid(input io.Reader) error {
@@ -59,15 +59,15 @@ func (g *Grid) LoadGrid(input io.Reader) error {
 	}
 	g.BuildGrid(newg.Rows, newg.Cols)
 	for _, t := range newg.Tiles {
-		g.tiles[t.Index].Properties.Set("type", 0)
-		g.tiles[t.Index].Properties.Set("count", t.Count)
-		g.tiles[t.Index].Properties.Set("index", t.Index)
+		g.Tiles[t.Index].Properties.Set("type", 0)
+		g.Tiles[t.Index].Properties.Set("count", t.Count)
+		g.Tiles[t.Index].Properties.Set("index", t.Index)
 	}
 	return nil
 }
 
 func (g *Grid) BuildGrid(rows, cols int) {
-	for _, b := range g.tiles {
+	for _, b := range g.Tiles {
 		b.Properties.Set("visible", false)
 		b.Properties.Destroy()
 	}
@@ -75,16 +75,16 @@ func (g *Grid) BuildGrid(rows, cols int) {
 	g.Cols = cols
 
 	size := g.Rows * g.Cols
-	g.tiles = make([]*tile.Tile, size, size)
+	g.Tiles = make([]*tile.Tile, size, size)
 	for n := 0; n < size; n++ {
-		g.tiles[n] = tile.New(g.parent)
-		g.tiles[n].Properties.Set("index", n)
+		g.Tiles[n] = tile.New(g.parent)
+		g.Tiles[n].Properties.Set("index", n)
 	}
 }
 
 func (g *Grid) Json() ([]byte, error) {
 	jTiles := make([]jsonTile, 0)
-	for _, t := range g.tiles {
+	for _, t := range g.Tiles {
 		c := t.Properties.Int("count")
 		i := t.Properties.Int("index")
 		if c != 0 {

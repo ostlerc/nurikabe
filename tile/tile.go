@@ -2,13 +2,11 @@ package tile
 
 type Tile struct {
 	Properties PropertyHolder
-	x          int
-	y          int
 }
 
 func New(parent interface{}) *Tile {
 	tile := &Tile{
-		Properties: TileCreator.Create(nil),
+		Properties: TileCreator.Create(),
 	}
 	tile.Properties.Set("parent", parent)
 	return tile

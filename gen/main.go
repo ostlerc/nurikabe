@@ -7,7 +7,6 @@ import (
 	"os"
 
 	"github.com/ostlerc/nurikabe/grid"
-	"github.com/ostlerc/nurikabe/tile"
 	"github.com/ostlerc/nurikabe/validator"
 )
 
@@ -18,9 +17,6 @@ var (
 
 func init() {
 	flag.Parse()
-	// TODO: remove qml coupling from grid / tile
-	// This is tricky as syncing the model from the view will cause a bit of work
-	tile.SetupTesting()
 }
 
 func main() {

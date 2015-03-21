@@ -1,12 +1,8 @@
 package tile
 
-import (
-	"gopkg.in/qml.v1"
-)
-
 type fakeCreator struct{}
 
-func (f *fakeCreator) Create(*qml.Context) PropertyHolder {
+func (f *fakeCreator) Create() PropertyHolder {
 	return &fakePropertyHolder{m: make(map[string]int)}
 }
 
@@ -27,6 +23,6 @@ func Fake() PropertyHolder {
 	return &fakePropertyHolder{m: make(map[string]int)}
 }
 
-func SetupTesting() {
+func init() {
 	TileCreator = &fakeCreator{}
 }
