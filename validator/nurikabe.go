@@ -56,7 +56,7 @@ func (n *nurikabe) openCountCorrect() bool {
 	return open == expected
 }
 
-// This function counts 9-connected open squares at each garden count spot
+// This function counts 4-connected open squares at each garden count spot
 func (n *nurikabe) gardensAreCorrect() bool {
 	for i, _ := range n.tiles {
 		if c := n.tiles[i].Count(); c > 0 {
@@ -113,14 +113,10 @@ func (n *nurikabe) markOpen(i int, found map[int]bool) int {
 
 	if i%n.col != n.row-1 { // not right side of grid
 		ret += n.markOpen(i+1, found)
-		ret += n.markOpen(i+n.col+1, found)
-		ret += n.markOpen(i-n.col+1, found)
 	}
 
 	if i%n.col != 0 { // not left side of grid
 		ret += n.markOpen(i-1, found)
-		ret += n.markOpen(i+n.col-1, found)
-		ret += n.markOpen(i-n.col-1, found)
 	}
 
 	return ret
