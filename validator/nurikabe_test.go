@@ -33,12 +33,14 @@ var tests = []*vTest{
 	&vTest{[]int{4}, map[int]int{}, 3, 3, false, true, true},
 
 	&vTest{[]int{1}, map[int]int{4: 9}, 3, 3, false, false, true},
-	&vTest{[]int{0, 1, 2, 3, 8, 9, 10, 11}, map[int]int{4: 3}, 4, 3, false, true, false},
+	&vTest{[]int{0, 1, 2, 3, 8, 9, 10, 11}, map[int]int{4: 4}, 4, 3, false, true, false},
 	&vTest{[]int{0, 1, 2, 3, 4, 8, 9, 10, 11}, map[int]int{4: 3}, 4, 3, false, false, true},
+	&vTest{[]int{2, 5, 6, 7, 8, 9, 11, 13, 16, 19, 22, 24, 25, 26, 27, 28, 29, 33},
+		map[int]int{10: 3, 17: 2, 18: 2, 21: 4, 30: 3, 34: 2}, 6, 6, false, true, false},
 }
 
 func BuildNurikabe(v *vTest) *nurikabe {
-	tiles := make([]*tile.Tile, v.rows*v.cols)
+	tiles := make([]*tile.Tile, v.rows*v.cols, v.rows*v.cols)
 	for i := 0; i < v.rows*v.cols; i++ {
 		tiles[i] = tile.New(nil)
 	}
@@ -66,7 +68,7 @@ func TestHasBlock(t *testing.T) {
 func TestGarden(t *testing.T) {
 	for _, vtest := range tests {
 		if BuildNurikabe(vtest).gardensAreCorrect() != vtest.garden {
-			t.Fatal("Failed")
+			t.Fatal("Failed", vtest)
 		}
 	}
 }
@@ -74,7 +76,7 @@ func TestGarden(t *testing.T) {
 func TestWall(t *testing.T) {
 	for _, vtest := range tests {
 		if BuildNurikabe(vtest).singleWall() != vtest.wall {
-			t.Fatal("Failed")
+			t.Fatal("Failed", vtest)
 		}
 	}
 }

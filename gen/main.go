@@ -31,7 +31,7 @@ func main() {
 			log.Fatal(err)
 		}
 	} else {
-		g.BuildGrid(*width, *height)
+		g.BuildGrid(*height, *width)
 	}
 
 	g.Generate(*min, *growth)
@@ -40,4 +40,8 @@ func main() {
 		panic(err)
 	}
 	fmt.Println(string(j))
+	if !g.CheckWin() {
+		panic("Fail")
+	}
+	g.Print()
 }

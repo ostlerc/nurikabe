@@ -1,6 +1,8 @@
 package validator
 
 import (
+	"fmt"
+
 	"github.com/ostlerc/nurikabe/tile"
 )
 
@@ -35,6 +37,7 @@ func (n *nurikabe) hasBlock() bool {
 			n.openAt(i+n.col+1) {
 			continue
 		}
+		fmt.Println("Block err")
 		return true
 	}
 	return false
@@ -53,6 +56,9 @@ func (n *nurikabe) openCountCorrect() bool {
 		}
 		expected += n.tiles[i].Count()
 	}
+	if open != expected {
+		fmt.Println("open", open, "!=", expected)
+	}
 	return open == expected
 }
 
@@ -62,6 +68,7 @@ func (n *nurikabe) gardensAreCorrect() bool {
 		if c := n.tiles[i].Count(); c > 0 {
 			openTiles := make(map[int]bool)
 			if x := n.markOpen(i, openTiles); x != c {
+				fmt.Println("gardens", x, "!=", c)
 				return false
 			}
 		}
@@ -83,12 +90,17 @@ func (n *nurikabe) singleWall() bool {
 	}
 
 	if firstWall == -1 || wallCount == 0 {
+		fmt.Println("early wall")
 		return false
 	}
 
 	found := make(map[int]bool)
 
-	return n.markClosed(firstWall, found) == wallCount
+	c := n.markClosed(firstWall, found)
+	if c != wallCount {
+		fmt.Println("wall", c, "!=", wallCount)
+	}
+	return c == wallCount
 }
 
 func (n *nurikabe) markOpen(i int, found map[int]bool) int {
@@ -111,7 +123,7 @@ func (n *nurikabe) markOpen(i int, found map[int]bool) int {
 		ret += n.markOpen(i-n.col, found)
 	}
 
-	if i%n.col != n.row-1 { // not right side of grid
+	if i%n.col != n.col-1 { // not right side of grid
 		ret += n.markOpen(i+1, found)
 	}
 
@@ -134,10 +146,21 @@ func (n *nurikabe) markClosed(i int, found map[int]bool) int {
 	found[i] = true
 	ret := 1
 
-	ret += n.markClosed(i+1, found)
-	ret += n.markClosed(i-1, found)
-	ret += n.markClosed(i+n.col, found)
-	ret += n.markClosed(i-n.col, found)
+	if i/n.col != n.row-1 { // not bottom of grid
+		ret += n.markClosed(i+n.col, found)
+	}
+
+	if i >= n.col { // not top of grid
+		ret += n.markClosed(i-n.col, found)
+	}
+
+	if i%n.col != n.col-1 { // not right side of grid
+		ret += n.markClosed(i+1, found)
+	}
+
+	if i%n.col != 0 { // not left side of grid
+		ret += n.markClosed(i-1, found)
+	}
 
 	return ret
 }

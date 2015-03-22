@@ -124,6 +124,15 @@ func (g *Grid) Generate(minGardens, gardenSize int) {
 	}
 }
 
+func (g *Grid) Print() {
+	for i := 0; i < len(g.Tiles); i += g.Cols {
+		for j := 0; j < g.Cols; j++ {
+			fmt.Print(g.Tiles[i+j].Properties.Int("type"), " ")
+		}
+		fmt.Println()
+	}
+}
+
 const (
 	opened = iota
 	closed = iota
@@ -200,7 +209,7 @@ func (g *Grid) markOpen(i, c int, tileMap mapset) []int {
 		steps = remove(-g.Cols, steps)
 	}
 
-	if i%g.Cols == g.Rows-1 { // right side of grid
+	if i%g.Cols == g.Cols-1 { // right side of grid
 		steps = remove(1, steps)
 	}
 
