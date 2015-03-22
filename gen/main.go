@@ -13,9 +13,9 @@ import (
 var (
 	width  = flag.Int("width", 5, "grid width")
 	height = flag.Int("height", 5, "grid height")
-	min    = flag.Int("min", 3, "minimum gardens")
+	min    = flag.Int("min", 3, "minimum gardens count")
 	growth = flag.Int("growth", 4, "garden growth. base + growth is max garden size")
-	base   = flag.Int("base", 2, "Minimum garden size")
+	base   = flag.Int("base", 2, "minimum garden size")
 
 	verbose = flag.Bool("v", false, "Verbose")
 )
