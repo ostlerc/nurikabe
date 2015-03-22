@@ -23,3 +23,8 @@ func (t *Tile) Count() int {
 func (t *Tile) SetType(_t int) {
 	t.Properties.Set("type", _t)
 }
+
+func (t *Tile) Reset() {
+	t.Properties.Set("type", 1) //closed
+	t.Properties.Set("count", 0)
+}

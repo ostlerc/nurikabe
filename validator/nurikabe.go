@@ -18,7 +18,7 @@ func (n *nurikabe) CheckWin(Tiles []*tile.Tile, row, col int) bool {
 	n.tiles = Tiles
 	n.row = row
 	n.col = col
-	if !n.hasBlock() && n.singleWall() && n.gardensAreCorrect() {
+	if !n.hasBlock() && n.singleWall() && n.gardensAreCorrect() && n.openCountCorrect() {
 		return true
 	}
 	return false
@@ -42,6 +42,18 @@ func (n *nurikabe) hasBlock() bool {
 
 func (n *nurikabe) openAt(i int) bool {
 	return n.tiles[i].Open()
+}
+
+func (n *nurikabe) openCountCorrect() bool {
+	open := 0
+	expected := 0
+	for i, t := range n.tiles {
+		if t.Open() {
+			open++
+		}
+		expected += n.tiles[i].Count()
+	}
+	return open == expected
 }
 
 // This function counts 9-connected open squares at each garden count spot

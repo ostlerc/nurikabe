@@ -13,6 +13,8 @@ import (
 var (
 	width  = flag.Int("width", 5, "grid width")
 	height = flag.Int("height", 5, "grid height")
+	min    = flag.Int("min", 3, "minimum gardens")
+	growth = flag.Int("growth", 4, "garden growth. 2 + growth is max garden size")
 )
 
 func init() {
@@ -32,6 +34,7 @@ func main() {
 		g.BuildGrid(*width, *height)
 	}
 
+	g.Generate(*min, *growth)
 	j, err := g.Json()
 	if err != nil {
 		panic(err)
