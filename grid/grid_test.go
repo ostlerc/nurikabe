@@ -91,7 +91,7 @@ func TestGenerate(t *testing.T) {
 	R = rand.New(rand.NewSource(99))
 	g := New(validator.NewNurikabe(), nil)
 	g.BuildGrid(4, 4)
-	g.Generate(3, 2)
+	g.Generate(3, 2, 2)
 	j, err := g.Json()
 	if err != nil {
 		panic(err)

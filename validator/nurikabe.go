@@ -16,6 +16,8 @@ func NewNurikabe() GridValidator {
 	return &nurikabe{}
 }
 
+var Verbose = false
+
 func (n *nurikabe) CheckWin(Tiles []*tile.Tile, row, col int) bool {
 	n.tiles = Tiles
 	n.row = row
@@ -37,7 +39,9 @@ func (n *nurikabe) hasBlock() bool {
 			n.openAt(i+n.col+1) {
 			continue
 		}
-		fmt.Println("Block err")
+		if Verbose {
+			fmt.Println("Block err")
+		}
 		return true
 	}
 	return false
@@ -56,7 +60,7 @@ func (n *nurikabe) openCountCorrect() bool {
 		}
 		expected += n.tiles[i].Count()
 	}
-	if open != expected {
+	if open != expected && Verbose {
 		fmt.Println("open", open, "!=", expected)
 	}
 	return open == expected
@@ -68,7 +72,9 @@ func (n *nurikabe) gardensAreCorrect() bool {
 		if c := n.tiles[i].Count(); c > 0 {
 			openTiles := make(map[int]bool)
 			if x := n.markOpen(i, openTiles); x != c {
-				fmt.Println("gardens", x, "!=", c)
+				if Verbose {
+					fmt.Println("gardens", x, "!=", c)
+				}
 				return false
 			}
 		}
@@ -90,14 +96,16 @@ func (n *nurikabe) singleWall() bool {
 	}
 
 	if firstWall == -1 || wallCount == 0 {
-		fmt.Println("early wall")
+		if Verbose {
+			fmt.Println("early wall")
+		}
 		return false
 	}
 
 	found := make(map[int]bool)
 
 	c := n.markClosed(firstWall, found)
-	if c != wallCount {
+	if c != wallCount && Verbose {
 		fmt.Println("wall", c, "!=", wallCount)
 	}
 	return c == wallCount

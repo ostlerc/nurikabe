@@ -14,7 +14,10 @@ var (
 	width  = flag.Int("width", 5, "grid width")
 	height = flag.Int("height", 5, "grid height")
 	min    = flag.Int("min", 3, "minimum gardens")
-	growth = flag.Int("growth", 4, "garden growth. 2 + growth is max garden size")
+	growth = flag.Int("growth", 4, "garden growth. base + growth is max garden size")
+	base   = flag.Int("base", 2, "Minimum garden size")
+
+	verbose = flag.Bool("v", false, "Verbose")
 )
 
 func init() {
@@ -22,6 +25,7 @@ func init() {
 }
 
 func main() {
+	validator.Verbose = *verbose
 	g := grid.New(validator.NewNurikabe(), nil)
 
 	stat, _ := os.Stdin.Stat()
@@ -34,7 +38,7 @@ func main() {
 		g.BuildGrid(*height, *width)
 	}
 
-	g.Generate(*min, *growth)
+	g.Generate(*min, *growth, *base)
 	j, err := g.Json()
 	if err != nil {
 		panic(err)

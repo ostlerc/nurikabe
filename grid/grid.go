@@ -94,7 +94,7 @@ func (g *Grid) reset() {
 }
 
 //TODO: add difficulty parameter
-func (g *Grid) Generate(minGardens, gardenSize int) {
+func (g *Grid) Generate(minGardens, gardenSize, base int) {
 	tileMap := make(mapset)
 	for {
 		g.reset()
@@ -103,7 +103,7 @@ func (g *Grid) Generate(minGardens, gardenSize int) {
 		}
 
 		c := 0
-		for ; g.placeGarden(R.Intn(gardenSize)+2, tileMap); c++ {
+		for ; g.placeGarden(R.Intn(gardenSize)+base, tileMap); c++ {
 		}
 
 		if c < minGardens {
