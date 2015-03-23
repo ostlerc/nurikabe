@@ -18,9 +18,10 @@ type gridTest struct {
 var v = validator.NewNurikabe()
 
 func loadGrid(input io.Reader, closed []int) *Grid {
-	g := New()
-
-	g.LoadGrid(input)
+	g, err := FromJson(input)
+	if err != nil {
+		panic(err)
+	}
 	setClosed(closed, g)
 	return g
 }
@@ -64,8 +65,7 @@ func TestJson(t *testing.T) {
 }
 
 func TestBuildGrid(t *testing.T) {
-	g := &Grid{}
-	g.BuildGrid(4, 6)
+	g := New(4, 6)
 	if g.cols != 6 {
 		t.Fatal("Invalid columns ", g.cols)
 	}

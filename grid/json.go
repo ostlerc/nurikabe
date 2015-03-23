@@ -19,23 +19,23 @@ type jsonTile struct {
 	Index int `json:"index,omitempty"`
 }
 
-func (g *Grid) LoadGrid(input io.Reader) error {
+func FromJson(input io.Reader) (*Grid, error) {
 	r := bufio.NewReader(input)
 	dat, err := r.ReadBytes('\n')
 	if err != nil && err != io.EOF {
-		return errors.New("error reading " + err.Error())
+		return nil, errors.New("error reading " + err.Error())
 	}
 	var jgrid jsonGrid
 	err = json.Unmarshal(dat, &jgrid)
 	if err != nil {
-		return errors.New("error unmarshalling " + err.Error())
+		return nil, errors.New("error unmarshalling " + err.Error())
 	}
-	g.BuildGrid(jgrid.Rows, jgrid.Cols)
+	g := New(jgrid.Rows, jgrid.Cols)
 	for _, t := range jgrid.Tiles {
 		g.tiles[t.Index].open = true
 		g.tiles[t.Index].count = t.Count
 	}
-	return nil
+	return g, nil
 }
 
 func (g *Grid) Json() ([]byte, error) {

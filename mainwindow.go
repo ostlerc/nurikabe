@@ -11,11 +11,11 @@ import (
 )
 
 type window struct {
-	g       *grid.Grid
-	qmlgrid qml.Object
-	status  qml.Object
-	v       validator.GridValidator
-	tiles   []qml.Object
+	g     *grid.Grid
+	v     validator.GridValidator
+	tiles []qml.Object
+
+	status qml.Object
 }
 
 func (w *window) TileChecked(i int) {
@@ -31,6 +31,21 @@ func (w *window) TileChecked(i int) {
 }
 
 func ShowMainWindow(engine *qml.Engine) {
+	var g *grid.Grid
+	var err error
+
+	stat, _ := os.Stdin.Stat()
+	if (stat.Mode() & os.ModeCharDevice) == 0 {
+		g, err = grid.FromJson(os.Stdin)
+		if err != nil {
+			log.Fatal(err)
+		}
+	} else {
+		g = grid.New(3, 3)
+	}
+
+	context := engine.Context()
+
 	tileComponent, err := engine.LoadFile("qml/tile.qml")
 	if err != nil {
 		panic(err)
@@ -42,28 +57,13 @@ func ShowMainWindow(engine *qml.Engine) {
 
 	comp := nurikabeComponent.CreateWindow(nil)
 	qmlgrid := comp.Root().ObjectByName("grid")
-
-	g := grid.New()
-
-	stat, _ := os.Stdin.Stat()
-	if (stat.Mode() & os.ModeCharDevice) == 0 {
-		err := g.LoadGrid(os.Stdin)
-		if err != nil {
-			log.Fatal(err)
-		}
-	} else {
-		g.BuildGrid(3, 3)
-	}
-
-	context := engine.Context()
 	window := &window{
-		g:       g,
-		qmlgrid: qmlgrid,
-		status:  comp.Root().ObjectByName("statusText"),
-		v:       validator.NewNurikabe(),
+		g:      g,
+		status: comp.Root().ObjectByName("statusText"),
+		v:      validator.NewNurikabe(),
 	}
 	context.SetVar("window", window)
-	window.qmlgrid.Set("columns", g.Columns())
+	qmlgrid.Set("columns", g.Columns())
 
 	l := g.Rows() * g.Columns()
 	tiles := make([]qml.Object, l, l)

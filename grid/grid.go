@@ -20,14 +20,6 @@ type Grid struct {
 	rows  int
 }
 
-func New() *Grid {
-	return &Grid{
-		tiles: nil,
-		rows:  0,
-		cols:  0,
-	}
-}
-
 func (g *Grid) Toggle(i int) {
 	g.tiles[i].open = !g.tiles[i].open
 }
@@ -48,20 +40,22 @@ func (g *Grid) Columns() int {
 	return g.cols
 }
 
-func (g *Grid) BuildGrid(rows, cols int) {
-	g.rows = rows
-	g.cols = cols
-
-	size := g.rows * g.cols
-	g.tiles = make([]*tile, size, size)
+func New(rows, cols int) *Grid {
+	size := rows * cols
+	g := &Grid{
+		rows:  rows,
+		cols:  cols,
+		tiles: make([]*tile, size, size),
+	}
 	for n := 0; n < size; n++ {
 		g.tiles[n] = &tile{open: true}
 	}
+	return g
 }
 
 func (g *Grid) Solve(v validator.GridValidator) {
-	sol := validator.Solve(g, v)
+	closed := validator.Solve(g, v)
 	for i, t := range g.tiles {
-		t.open = !sol[i]
+		t.open = !closed[i]
 	}
 }

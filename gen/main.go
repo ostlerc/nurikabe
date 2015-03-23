@@ -27,16 +27,17 @@ func init() {
 func main() {
 	validator.Verbose = *verbose
 	v := validator.NewNurikabe()
-	g := grid.New()
+	var g *grid.Grid
+	var err error
 
 	stat, _ := os.Stdin.Stat()
 	if (stat.Mode() & os.ModeCharDevice) == 0 {
-		err := g.LoadGrid(os.Stdin)
+		g, err = grid.FromJson(os.Stdin)
 		if err != nil {
 			log.Fatal(err)
 		}
 	} else {
-		g.BuildGrid(*height, *width)
+		g = grid.New(*height, *width)
 	}
 
 	g.Generate(v, *min, *growth, *base)

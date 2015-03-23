@@ -15,7 +15,7 @@ var Verbose = false
 
 type nurikabeSolver struct {
 	gardens map[int]int
-	state   []bool
+	tiles   []bool
 	v       GridValidator
 	rows    int
 	cols    int
@@ -29,22 +29,21 @@ func Solve(d GridData, v GridValidator) []bool {
 	}
 	s := &nurikabeSolver{
 		gardens: gardens,
-		state:   ret,
+		tiles:   ret,
 		v:       v,
 		rows:    d.Rows(),
 		cols:    d.Columns(),
 	}
 
 	if s.dumbSolve(0) {
-		fmt.Println("Solved", s.state)
-		return s.state
+		return s.tiles
 	}
 
 	return nil
 }
 
 func (n *nurikabeSolver) Open(i int) bool {
-	return !n.state[i]
+	return !n.tiles[i]
 }
 
 func (n *nurikabeSolver) Count(i int) int {
@@ -60,22 +59,22 @@ func (n *nurikabeSolver) Columns() int {
 }
 
 func (n *nurikabeSolver) dumbSolve(i int) bool {
-	if i == len(n.state)-1 {
-		n.state[i] = true
+	if i == len(n.tiles)-1 {
+		n.tiles[i] = true
 		if n.v.CheckWin(n) {
 			return true
 		}
-		n.state[i] = false
+		n.tiles[i] = false
 		if n.v.CheckWin(n) {
 			return true
 		}
 		return false
 	}
-	n.state[i] = true
+	n.tiles[i] = true
 	if n.dumbSolve(i + 1) {
 		return true
 	}
-	n.state[i] = false
+	n.tiles[i] = false
 	if n.dumbSolve(i + 1) {
 		return true
 	}
