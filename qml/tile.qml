@@ -38,7 +38,7 @@ Rectangle {
             } else {
                 type = 0
             }
-            window.tileChecked();
+            window.tileChecked(index);
         }
     }
 }

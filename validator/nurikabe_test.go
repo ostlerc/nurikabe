@@ -2,8 +2,6 @@ package validator
 
 import (
 	"testing"
-
-	"github.com/ostlerc/nurikabe/tile"
 )
 
 type vTest struct {
@@ -64,10 +62,6 @@ func (f *fakeGridData) Columns() int {
 }
 
 func BuildNurikabe(v *vTest) *nurikabe {
-	tiles := make([]*tile.Tile, v.rows*v.cols, v.rows*v.cols)
-	for i := 0; i < v.rows*v.cols; i++ {
-		tiles[i] = tile.New(nil)
-	}
 	closed := make(map[int]bool, len(v.closed))
 	for _, i := range v.closed {
 		closed[i] = true

@@ -1,9 +1,7 @@
 package grid
 
 import (
-	"fmt"
 	"io"
-	"math/rand"
 	"strings"
 	"testing"
 
@@ -20,7 +18,7 @@ type gridTest struct {
 var v = validator.NewNurikabe()
 
 func loadGrid(input io.Reader, closed []int) *Grid {
-	g := New(nil)
+	g := New()
 
 	g.LoadGrid(input)
 	setClosed(closed, g)
@@ -29,7 +27,7 @@ func loadGrid(input io.Reader, closed []int) *Grid {
 
 func setClosed(idx []int, g *Grid) {
 	for _, i := range idx {
-		g.tiles[i].SetType(1)
+		g.tiles[i].open = false
 	}
 }
 
@@ -74,29 +72,4 @@ func TestBuildGrid(t *testing.T) {
 	if g.rows != 4 {
 		t.Fatal("Invalid rows ", g.rows)
 	}
-}
-
-func TestMarkOpen(t *testing.T) {
-	R = rand.New(rand.NewSource(99))
-	g := New(nil)
-	g.BuildGrid(3, 3)
-	g.reset()
-	tileMap := make(mapset)
-	for i, _ := range g.tiles {
-		tileMap[i] = closed
-	}
-	tiles := g.markOpen(1, 4, tileMap)
-	fmt.Println(tiles)
-}
-
-func TestGenerate(t *testing.T) {
-	R = rand.New(rand.NewSource(99))
-	g := New(nil)
-	g.BuildGrid(4, 4)
-	g.Generate(v, 3, 2, 2)
-	j, err := g.Json()
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(string(j))
 }

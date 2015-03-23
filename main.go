@@ -5,7 +5,6 @@ import (
 	"log"
 	"os"
 
-	"github.com/ostlerc/nurikabe/tile"
 	"github.com/ostlerc/nurikabe/validator"
 
 	"gopkg.in/qml.v1"
@@ -30,9 +29,6 @@ func main() {
 
 func run() error {
 	engine := qml.NewEngine()
-
-	tile.SetupGui(engine, "qml/tile.qml")
 	CreateMainWindow(engine)
-
 	return nil
 }

@@ -27,7 +27,7 @@ func init() {
 func main() {
 	validator.Verbose = *verbose
 	v := validator.NewNurikabe()
-	g := grid.New(nil)
+	g := grid.New()
 
 	stat, _ := os.Stdin.Stat()
 	if (stat.Mode() & os.ModeCharDevice) == 0 {

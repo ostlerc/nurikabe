@@ -9,19 +9,20 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/ostlerc/nurikabe/tile"
 	"github.com/ostlerc/nurikabe/validator"
 )
 
 var R = rand.New(rand.NewSource(time.Now().UnixNano()))
 
+type tile struct {
+	open  bool
+	count int
+}
+
 type Grid struct {
-	parent interface{}
-
-	tiles []*tile.Tile
-
-	cols int
-	rows int
+	tiles []*tile
+	cols  int
+	rows  int
 }
 
 // json member variables must be external for unmarshalling
@@ -36,21 +37,24 @@ type jsonTile struct {
 	Index int `json:"index,omitempty"`
 }
 
-func New(parent interface{}) *Grid {
+func New() *Grid {
 	return &Grid{
-		parent: parent,
-		tiles:  make([]*tile.Tile, 0),
-		rows:   0,
-		cols:   0,
+		tiles: nil,
+		rows:  0,
+		cols:  0,
 	}
 }
 
+func (g *Grid) Toggle(i int) {
+	g.tiles[i].open = !g.tiles[i].open
+}
+
 func (g *Grid) Open(i int) bool {
-	return g.tiles[i].Open()
+	return g.tiles[i].open
 }
 
 func (g *Grid) Count(i int) int {
-	return g.tiles[i].Count()
+	return g.tiles[i].count
 }
 
 func (g *Grid) Rows() int {
@@ -74,41 +78,36 @@ func (g *Grid) LoadGrid(input io.Reader) error {
 	}
 	g.BuildGrid(jgrid.Rows, jgrid.Cols)
 	for _, t := range jgrid.Tiles {
-		g.tiles[t.Index].Properties.Set("type", 0)
-		g.tiles[t.Index].Properties.Set("count", t.Count)
-		g.tiles[t.Index].Properties.Set("index", t.Index)
+		g.tiles[t.Index].open = true
+		g.tiles[t.Index].count = t.Count
 	}
 	return nil
 }
 
 func (g *Grid) BuildGrid(rows, cols int) {
-	for _, b := range g.tiles {
-		b.Properties.Set("visible", false)
-		b.Properties.Destroy()
-	}
 	g.rows = rows
 	g.cols = cols
 
 	size := g.rows * g.cols
-	g.tiles = make([]*tile.Tile, size, size)
+	g.tiles = make([]*tile, size, size)
 	for n := 0; n < size; n++ {
-		g.tiles[n] = tile.New(g.parent)
-		g.tiles[n].Properties.Set("index", n)
+		g.tiles[n] = &tile{open: true}
 	}
 }
 
 func (g *Grid) reset() {
 	for _, t := range g.tiles {
-		t.Reset()
+		t.open = true
+		t.count = 0
 	}
 }
 
 //TODO: add difficulty parameter
 func (g *Grid) Generate(v validator.GridValidator, minGardens, gardenSize, base int) {
-	tileMap := make(mapset)
+	tileMap := make(mapset, len(g.tiles))
 	for {
 		g.reset()
-		for i, _ := range g.tiles {
+		for i := 0; i < len(g.tiles); i++ {
 			tileMap[i] = closed
 		}
 
@@ -121,11 +120,7 @@ func (g *Grid) Generate(v validator.GridValidator, minGardens, gardenSize, base 
 		}
 
 		for i, t := range g.tiles {
-			if tileMap[i] == opened {
-				t.Properties.Set("type", 0)
-			} else {
-				t.Properties.Set("type", 1)
-			}
+			t.open = tileMap[i] == opened
 		}
 
 		if v.CheckWin(g) {
@@ -137,18 +132,20 @@ func (g *Grid) Generate(v validator.GridValidator, minGardens, gardenSize, base 
 func (g *Grid) Solve(v validator.GridValidator) {
 	sol := validator.Solve(g, v)
 	for i, t := range g.tiles {
-		if sol[i] {
-			t.Properties.Set("type", 1)
-		} else {
-			t.Properties.Set("type", 0)
-		}
+		t.open = !sol[i]
 	}
 }
 
 func (g *Grid) Print() {
 	for i := 0; i < len(g.tiles); i += g.cols {
 		for j := 0; j < g.cols; j++ {
-			fmt.Print(g.tiles[i+j].Properties.Int("type"), " ")
+			if c := g.tiles[i+j].count; c > 0 {
+				fmt.Print(c, " ")
+			} else if g.tiles[i+j].open {
+				fmt.Print("o ")
+			} else {
+				fmt.Print("x ")
+			}
 		}
 		fmt.Println()
 	}
@@ -196,8 +193,8 @@ func (g *Grid) placeGarden(max int, tileMap mapset) bool {
 	if len(tiles) < 2 {
 		return false
 	}
-	g.tiles[i].Properties.Set("type", 0)
-	g.tiles[i].Properties.Set("count", len(tiles))
+	g.tiles[i].open = true
+	g.tiles[i].count = len(tiles)
 
 	return true
 }
@@ -273,7 +270,7 @@ func (g *Grid) markOpen(i, c int, tileMap mapset) []int {
 func (g *Grid) closedCount() int {
 	c := 0
 	for _, t := range g.tiles {
-		if !t.Open() {
+		if !t.open {
 			c++
 		}
 	}
@@ -282,12 +279,10 @@ func (g *Grid) closedCount() int {
 
 func (g *Grid) Json() ([]byte, error) {
 	jTiles := make([]jsonTile, 0)
-	for _, t := range g.tiles {
-		c := t.Properties.Int("count")
-		i := t.Properties.Int("index")
-		if c != 0 {
+	for i, t := range g.tiles {
+		if t.count > 0 {
 			jTiles = append(jTiles, jsonTile{
-				Count: c,
+				Count: t.count,
 				Index: i,
 			})
 		}
