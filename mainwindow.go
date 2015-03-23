@@ -11,26 +11,26 @@ import (
 )
 
 type window struct {
-	g          *grid.Grid
-	qmlgrid    qml.Object
-	statusText qml.Object
-	v          validator.GridValidator
-	tiles      []qml.Object
+	g       *grid.Grid
+	qmlgrid qml.Object
+	status  qml.Object
+	v       validator.GridValidator
+	tiles   []qml.Object
 }
 
 func (w *window) TileChecked(i int) {
 	w.g.Toggle(i)
 	if w.v.CheckWin(w.g) {
-		w.statusText.Set("text", "Winner!")
+		w.status.Set("text", "Winner!")
 	} else {
-		w.statusText.Set("text", "Nurikabe")
+		w.status.Set("text", "Nurikabe")
 	}
 	if *verbose {
 		w.g.Print()
 	}
 }
 
-func CreateMainWindow(engine *qml.Engine) {
+func ShowMainWindow(engine *qml.Engine) {
 	tileComponent, err := engine.LoadFile("qml/tile.qml")
 	if err != nil {
 		panic(err)
@@ -57,12 +57,11 @@ func CreateMainWindow(engine *qml.Engine) {
 
 	context := engine.Context()
 	window := &window{
-		g:          g,
-		qmlgrid:    qmlgrid,
-		statusText: comp.Root().ObjectByName("statusText"),
-		v:          validator.NewNurikabe(),
+		g:       g,
+		qmlgrid: qmlgrid,
+		status:  comp.Root().ObjectByName("statusText"),
+		v:       validator.NewNurikabe(),
 	}
-	context.SetVar("grid", g)
 	context.SetVar("window", window)
 	window.qmlgrid.Set("columns", g.Columns())
 

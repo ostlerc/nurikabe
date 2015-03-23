@@ -29,6 +29,6 @@ func main() {
 
 func run() error {
 	engine := qml.NewEngine()
-	CreateMainWindow(engine)
+	ShowMainWindow(engine)
 	return nil
 }
