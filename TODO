@@ -1,6 +1,6 @@
 add validator tests [x]
 add generation [x]
-add dumb solver
+add dumb solver [x]
 add better solver
 generate levels
  - 10 easy
