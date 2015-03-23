@@ -1,15 +1,10 @@
 package validator
 
-import (
-	"fmt"
-
-	"github.com/ostlerc/nurikabe/tile"
-)
+import "fmt"
 
 type nurikabe struct {
-	tiles []*tile.Tile
-	row   int
-	col   int
+	d GridData
+	l int
 }
 
 func NewNurikabe() GridValidator {
@@ -18,10 +13,78 @@ func NewNurikabe() GridValidator {
 
 var Verbose = false
 
-func (n *nurikabe) CheckWin(Tiles []*tile.Tile, row, col int) bool {
-	n.tiles = Tiles
-	n.row = row
-	n.col = col
+type nurikabeSolver struct {
+	gardens map[int]int
+	state   []bool
+	v       GridValidator
+	rows    int
+	cols    int
+}
+
+func Solve(d GridData, v GridValidator) []bool {
+	ret := make([]bool, d.Rows()*d.Columns(), d.Rows()*d.Columns())
+	gardens := make(map[int]int, len(ret))
+	for i := 0; i < len(ret); i++ {
+		gardens[i] = d.Count(i)
+	}
+	s := &nurikabeSolver{
+		gardens: gardens,
+		state:   ret,
+		v:       v,
+		rows:    d.Rows(),
+		cols:    d.Columns(),
+	}
+
+	if s.dumbSolve(0) {
+		fmt.Println("Solved", s.state)
+		return s.state
+	}
+
+	return nil
+}
+
+func (n *nurikabeSolver) Open(i int) bool {
+	return !n.state[i]
+}
+
+func (n *nurikabeSolver) Count(i int) int {
+	return n.gardens[i]
+}
+
+func (n *nurikabeSolver) Rows() int {
+	return n.rows
+}
+
+func (n *nurikabeSolver) Columns() int {
+	return n.cols
+}
+
+func (n *nurikabeSolver) dumbSolve(i int) bool {
+	if i == len(n.state)-1 {
+		n.state[i] = true
+		if n.v.CheckWin(n) {
+			return true
+		}
+		n.state[i] = false
+		if n.v.CheckWin(n) {
+			return true
+		}
+		return false
+	}
+	n.state[i] = true
+	if n.dumbSolve(i + 1) {
+		return true
+	}
+	n.state[i] = false
+	if n.dumbSolve(i + 1) {
+		return true
+	}
+	return false
+}
+
+func (n *nurikabe) CheckWin(d GridData) bool {
+	n.d = d
+	n.l = d.Rows() * d.Columns()
 	if !n.hasBlock() && n.singleWall() && n.gardensAreCorrect() && n.openCountCorrect() {
 		return true
 	}
@@ -30,13 +93,13 @@ func (n *nurikabe) CheckWin(Tiles []*tile.Tile, row, col int) bool {
 
 // This function detects quad blocks
 func (n *nurikabe) hasBlock() bool {
-	for i, _ := range n.tiles {
-		if i/n.col == n.row-1 || // bottom of grid
-			i%n.col == n.col-1 || // right side of grid
-			n.openAt(i) ||
-			n.openAt(i+1) ||
-			n.openAt(i+n.col) ||
-			n.openAt(i+n.col+1) {
+	for i := 0; i < n.l; i++ {
+		if i/n.d.Columns() == n.d.Rows()-1 || // bottom of grid
+			i%n.d.Columns() == n.d.Columns()-1 || // right side of grid
+			n.d.Open(i) ||
+			n.d.Open(i+1) ||
+			n.d.Open(i+n.d.Columns()) ||
+			n.d.Open(i+n.d.Columns()+1) {
 			continue
 		}
 		if Verbose {
@@ -47,18 +110,14 @@ func (n *nurikabe) hasBlock() bool {
 	return false
 }
 
-func (n *nurikabe) openAt(i int) bool {
-	return n.tiles[i].Open()
-}
-
 func (n *nurikabe) openCountCorrect() bool {
 	open := 0
 	expected := 0
-	for i, t := range n.tiles {
-		if t.Open() {
+	for i := 0; i < n.l; i++ {
+		if n.d.Open(i) {
 			open++
 		}
-		expected += n.tiles[i].Count()
+		expected += n.d.Count(i)
 	}
 	if open != expected && Verbose {
 		fmt.Println("open", open, "!=", expected)
@@ -68,8 +127,8 @@ func (n *nurikabe) openCountCorrect() bool {
 
 // This function counts 4-connected open squares at each garden count spot
 func (n *nurikabe) gardensAreCorrect() bool {
-	for i, _ := range n.tiles {
-		if c := n.tiles[i].Count(); c > 0 {
+	for i := 0; i < n.l; i++ {
+		if c := n.d.Count(i); c > 0 {
 			openTiles := make(map[int]bool)
 			if x := n.markOpen(i, openTiles); x != c {
 				if Verbose {
@@ -86,8 +145,8 @@ func (n *nurikabe) gardensAreCorrect() bool {
 func (n *nurikabe) singleWall() bool {
 	firstWall := -1
 	wallCount := 0
-	for i, _ := range n.tiles {
-		if !n.openAt(i) {
+	for i := 0; i < n.l; i++ {
+		if !n.d.Open(i) {
 			if firstWall == -1 {
 				firstWall = i
 			}
@@ -112,30 +171,30 @@ func (n *nurikabe) singleWall() bool {
 }
 
 func (n *nurikabe) markOpen(i int, found map[int]bool) int {
-	if i < 0 || i >= len(n.tiles) {
+	if i < 0 || i >= n.l {
 		return 0
 	}
 
-	if _, ok := found[i]; ok || !n.openAt(i) {
+	if _, ok := found[i]; ok || !n.d.Open(i) {
 		return 0
 	}
 
 	found[i] = true
 	ret := 1
 
-	if i/n.col != n.row-1 { // not bottom of grid
-		ret += n.markOpen(i+n.col, found)
+	if i/n.d.Columns() != n.d.Rows()-1 { // not bottom of grid
+		ret += n.markOpen(i+n.d.Columns(), found)
 	}
 
-	if i >= n.col { // not top of grid
-		ret += n.markOpen(i-n.col, found)
+	if i >= n.d.Columns() { // not top of grid
+		ret += n.markOpen(i-n.d.Columns(), found)
 	}
 
-	if i%n.col != n.col-1 { // not right side of grid
+	if i%n.d.Columns() != n.d.Columns()-1 { // not right side of grid
 		ret += n.markOpen(i+1, found)
 	}
 
-	if i%n.col != 0 { // not left side of grid
+	if i%n.d.Columns() != 0 { // not left side of grid
 		ret += n.markOpen(i-1, found)
 	}
 
@@ -143,30 +202,30 @@ func (n *nurikabe) markOpen(i int, found map[int]bool) int {
 }
 
 func (n *nurikabe) markClosed(i int, found map[int]bool) int {
-	if i < 0 || i >= len(n.tiles) {
+	if i < 0 || i >= n.l {
 		return 0
 	}
 
-	if _, ok := found[i]; ok || n.openAt(i) {
+	if _, ok := found[i]; ok || n.d.Open(i) {
 		return 0
 	}
 
 	found[i] = true
 	ret := 1
 
-	if i/n.col != n.row-1 { // not bottom of grid
-		ret += n.markClosed(i+n.col, found)
+	if i/n.d.Columns() != n.d.Rows()-1 { // not bottom of grid
+		ret += n.markClosed(i+n.d.Columns(), found)
 	}
 
-	if i >= n.col { // not top of grid
-		ret += n.markClosed(i-n.col, found)
+	if i >= n.d.Columns() { // not top of grid
+		ret += n.markClosed(i-n.d.Columns(), found)
 	}
 
-	if i%n.col != n.col-1 { // not right side of grid
+	if i%n.d.Columns() != n.d.Columns()-1 { // not right side of grid
 		ret += n.markClosed(i+1, found)
 	}
 
-	if i%n.col != 0 { // not left side of grid
+	if i%n.d.Columns() != 0 { // not left side of grid
 		ret += n.markClosed(i-1, found)
 	}
 

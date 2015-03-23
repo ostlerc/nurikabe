@@ -17,8 +17,10 @@ type gridTest struct {
 	win     bool
 }
 
+var v = validator.NewNurikabe()
+
 func loadGrid(input io.Reader, closed []int) *Grid {
-	g := New(validator.NewNurikabe(), nil)
+	g := New(nil)
 
 	g.LoadGrid(input)
 	setClosed(closed, g)
@@ -27,7 +29,7 @@ func loadGrid(input io.Reader, closed []int) *Grid {
 
 func setClosed(idx []int, g *Grid) {
 	for _, i := range idx {
-		g.Tiles[i].SetType(1)
+		g.tiles[i].SetType(1)
 	}
 }
 
@@ -48,7 +50,7 @@ var gridTests = []gridTest{
 func TestWinner(t *testing.T) {
 	for i, gt := range gridTests {
 		grid := loadGrid(strings.NewReader(gt.json), gt.closed)
-		if gt.win != grid.CheckWin() {
+		if gt.win != v.CheckWin(grid) {
 			t.Fatal("win invalid for test", i, "(", gt.testNum, ")")
 		}
 	}
@@ -66,21 +68,21 @@ func TestJson(t *testing.T) {
 func TestBuildGrid(t *testing.T) {
 	g := &Grid{}
 	g.BuildGrid(4, 6)
-	if g.Cols != 6 {
-		t.Fatal("Invalid columns ", g.Cols)
+	if g.cols != 6 {
+		t.Fatal("Invalid columns ", g.cols)
 	}
-	if g.Rows != 4 {
-		t.Fatal("Invalid rows ", g.Rows)
+	if g.rows != 4 {
+		t.Fatal("Invalid rows ", g.rows)
 	}
 }
 
 func TestMarkOpen(t *testing.T) {
 	R = rand.New(rand.NewSource(99))
-	g := New(validator.NewNurikabe(), nil)
+	g := New(nil)
 	g.BuildGrid(3, 3)
 	g.reset()
 	tileMap := make(mapset)
-	for i, _ := range g.Tiles {
+	for i, _ := range g.tiles {
 		tileMap[i] = closed
 	}
 	tiles := g.markOpen(1, 4, tileMap)
@@ -89,9 +91,9 @@ func TestMarkOpen(t *testing.T) {
 
 func TestGenerate(t *testing.T) {
 	R = rand.New(rand.NewSource(99))
-	g := New(validator.NewNurikabe(), nil)
+	g := New(nil)
 	g.BuildGrid(4, 4)
-	g.Generate(3, 2, 2)
+	g.Generate(v, 3, 2, 2)
 	j, err := g.Json()
 	if err != nil {
 		panic(err)

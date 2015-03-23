@@ -14,10 +14,11 @@ type window struct {
 	g          *grid.Grid
 	qmlgrid    qml.Object
 	statusText qml.Object
+	v          validator.GridValidator
 }
 
 func (w *window) TileChecked() {
-	if w.g.CheckWin() {
+	if w.v.CheckWin(w.g) {
 		w.statusText.Set("text", "Winner!")
 	} else {
 		w.statusText.Set("text", "Nurikabe")
@@ -32,7 +33,7 @@ func CreateMainWindow(engine *qml.Engine) {
 
 	comp := component.CreateWindow(nil)
 	qmlgrid := comp.Root().ObjectByName("grid")
-	g := grid.New(validator.NewNurikabe(), qmlgrid)
+	g := grid.New(qmlgrid)
 
 	stat, _ := os.Stdin.Stat()
 	if (stat.Mode() & os.ModeCharDevice) == 0 {
@@ -49,10 +50,11 @@ func CreateMainWindow(engine *qml.Engine) {
 		g:          g,
 		qmlgrid:    qmlgrid,
 		statusText: comp.Root().ObjectByName("statusText"),
+		v:          validator.NewNurikabe(),
 	}
 	context.SetVar("grid", g)
 	context.SetVar("window", window)
-	window.qmlgrid.Set("columns", g.Cols)
+	window.qmlgrid.Set("columns", g.Columns())
 
 	comp.Show()
 	comp.Wait()

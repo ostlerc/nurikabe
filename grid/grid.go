@@ -16,13 +16,12 @@ import (
 var R = rand.New(rand.NewSource(time.Now().UnixNano()))
 
 type Grid struct {
-	valid  validator.GridValidator
 	parent interface{}
 
-	Tiles []*tile.Tile
+	tiles []*tile.Tile
 
-	Cols int
-	Rows int
+	cols int
+	rows int
 }
 
 // json member variables must be external for unmarshalling
@@ -37,18 +36,29 @@ type jsonTile struct {
 	Index int `json:"index,omitempty"`
 }
 
-func New(v validator.GridValidator, parent interface{}) *Grid {
+func New(parent interface{}) *Grid {
 	return &Grid{
-		valid:  v,
 		parent: parent,
-		Tiles:  make([]*tile.Tile, 0),
-		Rows:   0,
-		Cols:   0,
+		tiles:  make([]*tile.Tile, 0),
+		rows:   0,
+		cols:   0,
 	}
 }
 
-func (g *Grid) CheckWin() bool {
-	return g.valid.CheckWin(g.Tiles, g.Rows, g.Cols)
+func (g *Grid) Open(i int) bool {
+	return g.tiles[i].Open()
+}
+
+func (g *Grid) Count(i int) int {
+	return g.tiles[i].Count()
+}
+
+func (g *Grid) Rows() int {
+	return g.rows
+}
+
+func (g *Grid) Columns() int {
+	return g.cols
 }
 
 func (g *Grid) LoadGrid(input io.Reader) error {
@@ -57,48 +67,48 @@ func (g *Grid) LoadGrid(input io.Reader) error {
 	if err != nil && err != io.EOF {
 		return errors.New("error reading " + err.Error())
 	}
-	var newg jsonGrid
-	err = json.Unmarshal(dat, &newg)
+	var jgrid jsonGrid
+	err = json.Unmarshal(dat, &jgrid)
 	if err != nil {
 		return errors.New("error unmarshalling " + err.Error())
 	}
-	g.BuildGrid(newg.Rows, newg.Cols)
-	for _, t := range newg.Tiles {
-		g.Tiles[t.Index].Properties.Set("type", 0)
-		g.Tiles[t.Index].Properties.Set("count", t.Count)
-		g.Tiles[t.Index].Properties.Set("index", t.Index)
+	g.BuildGrid(jgrid.Rows, jgrid.Cols)
+	for _, t := range jgrid.Tiles {
+		g.tiles[t.Index].Properties.Set("type", 0)
+		g.tiles[t.Index].Properties.Set("count", t.Count)
+		g.tiles[t.Index].Properties.Set("index", t.Index)
 	}
 	return nil
 }
 
 func (g *Grid) BuildGrid(rows, cols int) {
-	for _, b := range g.Tiles {
+	for _, b := range g.tiles {
 		b.Properties.Set("visible", false)
 		b.Properties.Destroy()
 	}
-	g.Rows = rows
-	g.Cols = cols
+	g.rows = rows
+	g.cols = cols
 
-	size := g.Rows * g.Cols
-	g.Tiles = make([]*tile.Tile, size, size)
+	size := g.rows * g.cols
+	g.tiles = make([]*tile.Tile, size, size)
 	for n := 0; n < size; n++ {
-		g.Tiles[n] = tile.New(g.parent)
-		g.Tiles[n].Properties.Set("index", n)
+		g.tiles[n] = tile.New(g.parent)
+		g.tiles[n].Properties.Set("index", n)
 	}
 }
 
 func (g *Grid) reset() {
-	for _, t := range g.Tiles {
+	for _, t := range g.tiles {
 		t.Reset()
 	}
 }
 
 //TODO: add difficulty parameter
-func (g *Grid) Generate(minGardens, gardenSize, base int) {
+func (g *Grid) Generate(v validator.GridValidator, minGardens, gardenSize, base int) {
 	tileMap := make(mapset)
 	for {
 		g.reset()
-		for i, _ := range g.Tiles {
+		for i, _ := range g.tiles {
 			tileMap[i] = closed
 		}
 
@@ -110,7 +120,7 @@ func (g *Grid) Generate(minGardens, gardenSize, base int) {
 			continue
 		}
 
-		for i, t := range g.Tiles {
+		for i, t := range g.tiles {
 			if tileMap[i] == opened {
 				t.Properties.Set("type", 0)
 			} else {
@@ -118,16 +128,27 @@ func (g *Grid) Generate(minGardens, gardenSize, base int) {
 			}
 		}
 
-		if g.CheckWin() {
+		if v.CheckWin(g) {
 			return
 		}
 	}
 }
 
+func (g *Grid) Solve(v validator.GridValidator) {
+	sol := validator.Solve(g, v)
+	for i, t := range g.tiles {
+		if sol[i] {
+			t.Properties.Set("type", 1)
+		} else {
+			t.Properties.Set("type", 0)
+		}
+	}
+}
+
 func (g *Grid) Print() {
-	for i := 0; i < len(g.Tiles); i += g.Cols {
-		for j := 0; j < g.Cols; j++ {
-			fmt.Print(g.Tiles[i+j].Properties.Int("type"), " ")
+	for i := 0; i < len(g.tiles); i += g.cols {
+		for j := 0; j < g.cols; j++ {
+			fmt.Print(g.tiles[i+j].Properties.Int("type"), " ")
 		}
 		fmt.Println()
 	}
@@ -175,8 +196,8 @@ func (g *Grid) placeGarden(max int, tileMap mapset) bool {
 	if len(tiles) < 2 {
 		return false
 	}
-	g.Tiles[i].Properties.Set("type", 0)
-	g.Tiles[i].Properties.Set("count", len(tiles))
+	g.tiles[i].Properties.Set("type", 0)
+	g.tiles[i].Properties.Set("count", len(tiles))
 
 	return true
 }
@@ -199,21 +220,21 @@ func (g *Grid) markOpen(i, c int, tileMap mapset) []int {
 	if c == 0 || tileMap[i] == sealed || tileMap[i] == opened {
 		return []int{}
 	}
-	steps := []int{1, -1, g.Cols, -g.Cols}
+	steps := []int{1, -1, g.cols, -g.cols}
 
-	if i/g.Cols == g.Rows-1 { // bottom of grid
-		steps = remove(g.Cols, steps)
+	if i/g.cols == g.rows-1 { // bottom of grid
+		steps = remove(g.cols, steps)
 	}
 
-	if i < g.Cols { // top of grid
-		steps = remove(-g.Cols, steps)
+	if i < g.cols { // top of grid
+		steps = remove(-g.cols, steps)
 	}
 
-	if i%g.Cols == g.Cols-1 { // right side of grid
+	if i%g.cols == g.cols-1 { // right side of grid
 		steps = remove(1, steps)
 	}
 
-	if i%g.Cols == 0 { // left side of grid
+	if i%g.cols == 0 { // left side of grid
 		steps = remove(-1, steps)
 	}
 
@@ -251,7 +272,7 @@ func (g *Grid) markOpen(i, c int, tileMap mapset) []int {
 
 func (g *Grid) closedCount() int {
 	c := 0
-	for _, t := range g.Tiles {
+	for _, t := range g.tiles {
 		if !t.Open() {
 			c++
 		}
@@ -261,7 +282,7 @@ func (g *Grid) closedCount() int {
 
 func (g *Grid) Json() ([]byte, error) {
 	jTiles := make([]jsonTile, 0)
-	for _, t := range g.Tiles {
+	for _, t := range g.tiles {
 		c := t.Properties.Int("count")
 		i := t.Properties.Int("index")
 		if c != 0 {
@@ -275,8 +296,8 @@ func (g *Grid) Json() ([]byte, error) {
 		jTiles = nil
 	}
 	jGrid := &jsonGrid{
-		Rows:  g.Rows,
-		Cols:  g.Cols,
+		Rows:  g.rows,
+		Cols:  g.cols,
 		Tiles: jTiles,
 	}
 	return json.Marshal(jGrid)

@@ -1,9 +1,12 @@
 package validator
 
-import (
-	"github.com/ostlerc/nurikabe/tile"
-)
+type GridData interface {
+	Open(int) bool
+	Count(int) int
+	Rows() int
+	Columns() int
+}
 
 type GridValidator interface {
-	CheckWin(Tiles []*tile.Tile, row, col int) bool
+	CheckWin(GridData) bool
 }

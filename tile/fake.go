@@ -26,3 +26,11 @@ func Fake() PropertyHolder {
 func init() {
 	TileCreator = &fakeCreator{}
 }
+
+func (f *fakePropertyHolder) Open() bool {
+	return f.Int("type") == 0
+}
+
+func (f *fakePropertyHolder) Count() int {
+	return f.Int("count")
+}

@@ -39,21 +39,52 @@ var tests = []*vTest{
 		map[int]int{10: 3, 17: 2, 18: 2, 21: 4, 30: 3, 34: 2}, 6, 6, false, true, false},
 }
 
+type fakeGridData struct {
+	counts map[int]int
+	closed map[int]bool
+	rows   int
+	cols   int
+}
+
+func (f *fakeGridData) Open(i int) bool {
+	_, ok := f.closed[i]
+	return !ok
+}
+
+func (f *fakeGridData) Count(i int) int {
+	return f.counts[i]
+}
+
+func (f *fakeGridData) Rows() int {
+	return f.rows
+}
+
+func (f *fakeGridData) Columns() int {
+	return f.cols
+}
+
 func BuildNurikabe(v *vTest) *nurikabe {
 	tiles := make([]*tile.Tile, v.rows*v.cols, v.rows*v.cols)
 	for i := 0; i < v.rows*v.cols; i++ {
 		tiles[i] = tile.New(nil)
 	}
+	closed := make(map[int]bool, len(v.closed))
 	for _, i := range v.closed {
-		tiles[i].Properties.Set("type", 1)
+		closed[i] = true
 	}
+	counts := make(map[int]int, len(v.count))
 	for k, v := range v.count {
-		tiles[k].Properties.Set("count", v)
+		counts[k] = v
+	}
+	data := &fakeGridData{
+		rows:   v.rows,
+		cols:   v.cols,
+		closed: closed,
+		counts: counts,
 	}
 	return &nurikabe{
-		tiles: tiles,
-		row:   v.rows,
-		col:   v.cols,
+		d: data,
+		l: v.rows * v.cols,
 	}
 }
 

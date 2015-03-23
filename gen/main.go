@@ -26,7 +26,8 @@ func init() {
 
 func main() {
 	validator.Verbose = *verbose
-	g := grid.New(validator.NewNurikabe(), nil)
+	v := validator.NewNurikabe()
+	g := grid.New(nil)
 
 	stat, _ := os.Stdin.Stat()
 	if (stat.Mode() & os.ModeCharDevice) == 0 {
@@ -38,14 +39,17 @@ func main() {
 		g.BuildGrid(*height, *width)
 	}
 
-	g.Generate(*min, *growth, *base)
+	g.Generate(v, *min, *growth, *base)
 	j, err := g.Json()
 	if err != nil {
 		panic(err)
 	}
 	fmt.Println(string(j))
-	if !g.CheckWin() {
+	if !v.CheckWin(g) {
 		panic("Fail")
 	}
+	g.Print()
+	g.Solve(v)
+	fmt.Println("solved")
 	g.Print()
 }
