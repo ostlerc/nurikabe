@@ -130,7 +130,7 @@ func (n *nurikabe) gardensAreCorrect() bool {
 	for i := 0; i < n.l; i++ {
 		if c := n.d.Count(i); c > 0 {
 			openTiles := make(map[int]bool)
-			if x := n.markOpen(i, openTiles); x != c {
+			if x := n.mark(i, openTiles, true); x != c {
 				if Verbose {
 					fmt.Println("gardens", x, "!=", c)
 				}
@@ -163,19 +163,19 @@ func (n *nurikabe) singleWall() bool {
 
 	found := make(map[int]bool)
 
-	c := n.markClosed(firstWall, found)
+	c := n.mark(firstWall, found, false)
 	if c != wallCount && Verbose {
 		fmt.Println("wall", c, "!=", wallCount)
 	}
 	return c == wallCount
 }
 
-func (n *nurikabe) markOpen(i int, found map[int]bool) int {
+func (n *nurikabe) mark(i int, found map[int]bool, open bool) int {
 	if i < 0 || i >= n.l {
 		return 0
 	}
 
-	if _, ok := found[i]; ok || !n.d.Open(i) {
+	if _, ok := found[i]; ok || n.d.Open(i) != open {
 		return 0
 	}
 
@@ -183,50 +183,19 @@ func (n *nurikabe) markOpen(i int, found map[int]bool) int {
 	ret := 1
 
 	if i/n.d.Columns() != n.d.Rows()-1 { // not bottom of grid
-		ret += n.markOpen(i+n.d.Columns(), found)
+		ret += n.mark(i+n.d.Columns(), found, open)
 	}
 
 	if i >= n.d.Columns() { // not top of grid
-		ret += n.markOpen(i-n.d.Columns(), found)
+		ret += n.mark(i-n.d.Columns(), found, open)
 	}
 
 	if i%n.d.Columns() != n.d.Columns()-1 { // not right side of grid
-		ret += n.markOpen(i+1, found)
+		ret += n.mark(i+1, found, open)
 	}
 
 	if i%n.d.Columns() != 0 { // not left side of grid
-		ret += n.markOpen(i-1, found)
-	}
-
-	return ret
-}
-
-func (n *nurikabe) markClosed(i int, found map[int]bool) int {
-	if i < 0 || i >= n.l {
-		return 0
-	}
-
-	if _, ok := found[i]; ok || n.d.Open(i) {
-		return 0
-	}
-
-	found[i] = true
-	ret := 1
-
-	if i/n.d.Columns() != n.d.Rows()-1 { // not bottom of grid
-		ret += n.markClosed(i+n.d.Columns(), found)
-	}
-
-	if i >= n.d.Columns() { // not top of grid
-		ret += n.markClosed(i-n.d.Columns(), found)
-	}
-
-	if i%n.d.Columns() != n.d.Columns()-1 { // not right side of grid
-		ret += n.markClosed(i+1, found)
-	}
-
-	if i%n.d.Columns() != 0 { // not left side of grid
-		ret += n.markClosed(i-1, found)
+		ret += n.mark(i-1, found, open)
 	}
 
 	return ret
