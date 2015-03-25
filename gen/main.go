@@ -18,6 +18,8 @@ var (
 	base   = flag.Int("base", 2, "minimum garden size")
 
 	verbose = flag.Bool("v", false, "Verbose")
+	solve   = flag.Bool("solve", false, "solve generated grid")
+	smart   = flag.Bool("smart", true, "solve using smart algorithm")
 )
 
 func init() {
@@ -50,7 +52,10 @@ func main() {
 		panic("Fail")
 	}
 	g.Print()
-	g.Solve(v)
-	fmt.Println("solved")
-	g.Print()
+	fmt.Println("")
+	if *solve {
+		g.Solve(v, *smart)
+		fmt.Println("solved")
+		g.Print()
+	}
 }

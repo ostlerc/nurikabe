@@ -105,3 +105,61 @@ func TestWall(t *testing.T) {
 		}
 	}
 }
+
+func TestGardenPermutation(t *testing.T) {
+	expected := map[int]int{2: 2, 3: 4, 4: 10}
+
+	for c, v := range expected {
+		n := &nurikabeSolver{
+			rows: 5,
+			cols: 5,
+		}
+
+		g := &gardenSolver{
+			i:         0,
+			c:         c,
+			workchan:  make(chan bool),
+			readychan: make(chan bool),
+			tileMap:   make(map[int]int),
+		}
+		go func() {
+			n.gardenPermutations(g)
+			close(g.workchan)
+		}()
+
+		count := 0
+		for {
+			_, ok := <-g.workchan
+			if !ok {
+				break
+			}
+			count++
+			g.readychan <- true
+		}
+
+		if count != v {
+			t.Fatal("Invalid count", c, v, count)
+		}
+	}
+}
+
+func TestGardenSolve(t *testing.T) {
+	n := &nurikabe{}
+	s := &nurikabeSolver{
+		gardens: make(map[int]int, 25),
+		tiles:   make([]bool, 25, 25),
+		v:       n,
+		rows:    5,
+		cols:    5,
+		tileMap: make(map[int]int),
+	}
+	s.gardens[1] = 5
+	s.gardens[9] = 2
+	s.gardens[21] = 4
+	s.gardens[23] = 2
+	gardens := []int{1, 9, 21, 23}
+	if !s.gardenSolve(gardens) {
+		t.Fatal("Failed to solve correctly")
+	}
+	Print(s)
+}

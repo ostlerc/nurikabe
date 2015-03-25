@@ -1,6 +1,8 @@
 package validator
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type nurikabe struct {
 	d GridData
@@ -19,23 +21,44 @@ type nurikabeSolver struct {
 	v       GridValidator
 	rows    int
 	cols    int
+
+	tileMap map[int]int
 }
 
-func Solve(d GridData, v GridValidator) []bool {
-	ret := make([]bool, d.Rows()*d.Columns(), d.Rows()*d.Columns())
-	gardens := make(map[int]int, len(ret))
-	for i := 0; i < len(ret); i++ {
-		gardens[i] = d.Count(i)
-	}
+type gardenSolver struct {
+	i, c      int
+	workchan  chan bool
+	readychan chan bool
+	tileMap   map[int]int
+	done      bool
+}
+
+func Solve(d GridData, v GridValidator, smart bool) []bool {
+	l := d.Rows() * d.Columns()
 	s := &nurikabeSolver{
-		gardens: gardens,
-		tiles:   ret,
+		gardens: make(map[int]int, l),
+		tiles:   make([]bool, l, l),
 		v:       v,
 		rows:    d.Rows(),
 		cols:    d.Columns(),
+		tileMap: make(map[int]int),
 	}
 
-	if s.dumbSolve(0) {
+	for i := 0; i < l; i++ {
+		s.gardens[i] = d.Count(i)
+	}
+
+	if smart {
+		gardenIndecies := make([]int, 0, l)
+		for k, v := range s.gardens {
+			if v > 0 {
+				gardenIndecies = append(gardenIndecies, k)
+			}
+		}
+		if s.gardenSolve(gardenIndecies) {
+			return s.tiles
+		}
+	} else if s.dumbSolve(0) {
 		return s.tiles
 	}
 
@@ -56,6 +79,22 @@ func (n *nurikabeSolver) Rows() int {
 
 func (n *nurikabeSolver) Columns() int {
 	return n.cols
+}
+
+func Print(d GridData) {
+	l := d.Rows() * d.Columns()
+	for i := 0; i < l; i += d.Columns() {
+		for j := 0; j < d.Columns(); j++ {
+			if c := d.Count(i + j); c > 0 {
+				fmt.Print(c, " ")
+			} else if d.Open(i + j) {
+				fmt.Print("o ")
+			} else {
+				fmt.Print("x ")
+			}
+		}
+		fmt.Println()
+	}
 }
 
 func (n *nurikabeSolver) dumbSolve(i int) bool {
@@ -79,6 +118,106 @@ func (n *nurikabeSolver) dumbSolve(i int) bool {
 		return true
 	}
 	return false
+}
+
+var counter = 0
+
+func (n *nurikabeSolver) gardenSolve(gardens []int) bool {
+	if len(gardens) == 0 {
+
+		for i := 0; i < len(n.tiles); i++ {
+			n.tiles[i] = true
+		}
+
+		for k, _ := range n.tileMap {
+			n.tiles[k] = false
+		}
+
+		if n.v.CheckWin(n) {
+			return true
+		}
+
+		return false
+	}
+
+	g := &gardenSolver{
+		i:         gardens[0],
+		c:         n.Count(gardens[0]),
+		workchan:  make(chan bool),
+		readychan: make(chan bool),
+		tileMap:   n.tileMap,
+	}
+	go func() {
+		n.gardenPermutations(g)
+		close(g.workchan)
+		close(g.readychan)
+	}()
+
+	for {
+		_, ok := <-g.workchan
+		if !ok {
+			break
+		}
+		if n.gardenSolve(gardens[1:]) {
+			g.done = true
+			g.readychan <- true
+			return true
+
+		}
+		g.readychan <- true
+	}
+
+	return false
+}
+
+// Find all possible garden permutations for garden at index i, where there is still c count possibilities left.
+// a bool will be sent on the workchan when tileMap contains the key indecies of a garden permutation.
+func (n *nurikabeSolver) gardenPermutations(g *gardenSolver) {
+	if g.done {
+		return
+	}
+
+	if _, ok := g.tileMap[g.i]; ok {
+		return
+	}
+
+	g.tileMap[g.i] = g.c
+	g.c--
+	defer func() {
+		delete(g.tileMap, g.i)
+		g.c++
+	}()
+
+	if g.c == 0 {
+		g.workchan <- true
+		<-g.readychan
+		return
+	}
+
+	steps := make([]int, 0, 4)
+
+	if g.i/n.Columns() != n.Rows()-1 { // not bottom of grid
+		steps = append(steps, n.Columns())
+	}
+
+	if g.i >= n.Columns() { // not top of grid
+		steps = append(steps, -n.Columns())
+	}
+
+	if g.i%n.Columns() != n.Columns()-1 { // not right side of grid
+		steps = append(steps, 1)
+	}
+
+	if g.i%n.Columns() != 0 { // not left side of grid
+		steps = append(steps, -1)
+	}
+
+	for _, step := range steps {
+		g.i += step
+		n.gardenPermutations(g)
+		g.i -= step
+	}
+	return
 }
 
 func (n *nurikabe) CheckWin(d GridData) bool {

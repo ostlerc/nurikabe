@@ -53,8 +53,11 @@ func New(rows, cols int) *Grid {
 	return g
 }
 
-func (g *Grid) Solve(v validator.GridValidator) {
-	closed := validator.Solve(g, v)
+func (g *Grid) Solve(v validator.GridValidator, smart bool) {
+	closed := validator.Solve(g, v, smart)
+	if closed == nil {
+		panic("Failed to solve :(")
+	}
 	for i, t := range g.tiles {
 		t.open = !closed[i]
 	}
