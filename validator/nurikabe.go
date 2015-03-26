@@ -2,6 +2,8 @@ package validator
 
 import (
 	"fmt"
+	"sort"
+	"strconv"
 )
 
 type nurikabe struct {
@@ -23,6 +25,7 @@ type nurikabeSolver struct {
 	cols    int
 
 	tileMap map[int]int
+	hash    map[string]bool
 }
 
 type gardenSolver struct {
@@ -31,6 +34,7 @@ type gardenSolver struct {
 	readychan chan bool
 	tileMap   map[int]int
 	done      bool
+	hash      map[string]bool
 }
 
 func Solve(d GridData, v GridValidator, smart bool) []bool {
@@ -41,7 +45,8 @@ func Solve(d GridData, v GridValidator, smart bool) []bool {
 		v:       v,
 		rows:    d.Rows(),
 		cols:    d.Columns(),
-		tileMap: make(map[int]int),
+		tileMap: make(map[int]int, 200),
+		hash:    make(map[string]bool, 10000),
 	}
 
 	for i := 0; i < l; i++ {
@@ -146,6 +151,7 @@ func (n *nurikabeSolver) gardenSolve(gardens []int) bool {
 		workchan:  make(chan bool),
 		readychan: make(chan bool),
 		tileMap:   n.tileMap,
+		hash:      n.hash,
 	}
 	go func() {
 		n.gardenPermutations(g)
@@ -170,6 +176,44 @@ func (n *nurikabeSolver) gardenSolve(gardens []int) bool {
 	return false
 }
 
+var hashbuf = make([]int, 1000, 1000)
+var runebuf = make([]rune, 10000, 10000)
+
+func hash(m map[int]int) string {
+	slice := hashbuf[:len(m)]
+	i := 0
+	for k, _ := range m {
+		slice[i] = k
+		i++
+	}
+	return hashint(slice)
+}
+
+var hashintbuf = make([]int, 1000, 1000)
+
+func hashint(slice []int) string {
+	sorted := make([]int, len(slice), len(slice))
+	for i := 0; i < len(slice); i++ {
+		sorted[i] = slice[i]
+	}
+	sort.Ints(sorted)
+	j := 0
+	for i := 0; i < len(sorted); i++ {
+		s := strconv.Itoa(sorted[i])
+		for _, c := range s {
+			runebuf[i+j] = c
+			j++
+		}
+		runebuf[i+j] = '-'
+	}
+	return string(runebuf[:len(sorted)+j])
+}
+
+func beenAt(g *gardenSolver, i int) bool {
+	_, ok := g.tileMap[g.i+i]
+	return ok
+}
+
 // Find all possible garden permutations for garden at index i, where there is still c count possibilities left.
 // a bool will be sent on the workchan when tileMap contains the key indecies of a garden permutation.
 func (n *nurikabeSolver) gardenPermutations(g *gardenSolver) {
@@ -177,16 +221,23 @@ func (n *nurikabeSolver) gardenPermutations(g *gardenSolver) {
 		return
 	}
 
-	if _, ok := g.tileMap[g.i]; ok {
+	if beenAt(g, 0) {
 		return
 	}
 
 	g.tileMap[g.i] = g.c
 	g.c--
+
 	defer func() {
 		delete(g.tileMap, g.i)
 		g.c++
 	}()
+
+	h := hash(g.tileMap)
+	if _, ok := g.hash[h]; ok {
+		return
+	}
+	g.hash[h] = true
 
 	if g.c == 0 {
 		g.workchan <- true
@@ -195,29 +246,65 @@ func (n *nurikabeSolver) gardenPermutations(g *gardenSolver) {
 	}
 
 	steps := make([]int, 0, 4)
-
-	if g.i/n.Columns() != n.Rows()-1 { // not bottom of grid
-		steps = append(steps, n.Columns())
+	appendIf := func(pred bool, v int) {
+		if pred && !beenAt(g, v) { // not bottom of grid
+			steps = append(steps, v)
+		}
 	}
 
-	if g.i >= n.Columns() { // not top of grid
-		steps = append(steps, -n.Columns())
+	appendIf(g.i/n.Columns() != n.Rows()-1, n.Columns()) // not bottom of grid
+	appendIf(g.i >= n.Columns(), -n.Columns())           // not top of grid
+	appendIf(g.i%n.Columns() != n.Columns()-1, 1)        // not right side of grid
+	appendIf(g.i%n.Columns() != 0, -1)                   // not left side of grid
+
+	for _, perm := range perms(steps, make(map[string]bool, 17)) {
+		orig := g.c
+		for _, step := range perm {
+			if g.c == 0 {
+				break
+			}
+			g.i += step
+			n.gardenPermutations(g)
+			g.i -= step
+			if g.done {
+				return
+			}
+
+			g.tileMap[g.i+step] = g.c
+			g.c--
+		}
+		for _, step := range perm {
+			delete(g.tileMap, g.i+step)
+		}
+		g.c = orig
 	}
 
-	if g.i%n.Columns() != n.Columns()-1 { // not right side of grid
-		steps = append(steps, 1)
-	}
-
-	if g.i%n.Columns() != 0 { // not left side of grid
-		steps = append(steps, -1)
-	}
-
-	for _, step := range steps {
-		g.i += step
-		n.gardenPermutations(g)
-		g.i -= step
-	}
 	return
+}
+
+// given [-1 1 -n n] -> [[-n -1 1 n] [-1 1 n] [1 n] [n] [1] [-1 n] [-1] [-1 1] [-n 1 n] [-n n] [-n] [-n 1] [-n -1 n] [-n -1] [-n -1 1]]
+func perms(items []int, h map[string]bool) [][]int {
+	if len(items) < 1 {
+		return nil
+	}
+	hashed := hashint(items)
+	if _, ok := h[hashed]; ok {
+		return nil
+	}
+	h[hashed] = true
+	ret := make([][]int, 1, 200)
+	ret[0] = make([]int, len(items))
+	copy(ret[0], items)
+	for i := 0; i < len(items); i++ {
+		t := make([]int, 0, len(items)-1)
+		t = append(t, items[i+1:]...)
+		t = append(t, items[:i]...)
+		p := perms(t, h)
+		if len(p) > 0 {
+			ret = append(ret, p...)
+		}
+	}
+	return ret
 }
 
 func (n *nurikabe) CheckWin(d GridData) bool {

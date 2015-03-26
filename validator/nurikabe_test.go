@@ -1,6 +1,7 @@
 package validator
 
 import (
+	"fmt"
 	"testing"
 )
 
@@ -107,7 +108,7 @@ func TestWall(t *testing.T) {
 }
 
 func TestGardenPermutation(t *testing.T) {
-	expected := map[int]int{2: 2, 3: 4, 4: 10}
+	expected := map[int]int{2: 2, 3: 5, 4: 12}
 
 	for c, v := range expected {
 		n := &nurikabeSolver{
@@ -120,7 +121,8 @@ func TestGardenPermutation(t *testing.T) {
 			c:         c,
 			workchan:  make(chan bool),
 			readychan: make(chan bool),
-			tileMap:   make(map[int]int),
+			tileMap:   make(map[int]int, 100),
+			hash:      make(map[string]bool, 50000),
 		}
 		go func() {
 			n.gardenPermutations(g)
@@ -143,6 +145,17 @@ func TestGardenPermutation(t *testing.T) {
 	}
 }
 
+func TestHash(t *testing.T) {
+	fmt.Println(hash(map[int]int{32: 8, 50: 12, 15: 1, 2: 2, 3: 3, 5: 5, 4: 4, 1: 0, 100: 32}))
+}
+
+func BenchmarkHash(b *testing.B) {
+	m := map[int]int{32: 8, 50: 12, 15: 1, 2: 2, 3: 3, 5: 5, 4: 4, 1: 0, 100: 32}
+	for i := 0; i < b.N; i++ {
+		hash(m)
+	}
+}
+
 func TestGardenSolve(t *testing.T) {
 	n := &nurikabe{}
 	s := &nurikabeSolver{
@@ -151,7 +164,8 @@ func TestGardenSolve(t *testing.T) {
 		v:       n,
 		rows:    5,
 		cols:    5,
-		tileMap: make(map[int]int),
+		tileMap: make(map[int]int, 100),
+		hash:    make(map[string]bool, 10000),
 	}
 	s.gardens[1] = 5
 	s.gardens[9] = 2
@@ -162,4 +176,37 @@ func TestGardenSolve(t *testing.T) {
 		t.Fatal("Failed to solve correctly")
 	}
 	Print(s)
+}
+
+func BenchmarkGardenSolve(b *testing.B) {
+	n := &nurikabe{}
+	s := &nurikabeSolver{
+		gardens: make(map[int]int, 25),
+		tiles:   make([]bool, 25, 25),
+		v:       n,
+		rows:    5,
+		cols:    5,
+		tileMap: make(map[int]int, 100),
+		hash:    make(map[string]bool, 10000),
+	}
+
+	s.gardens[1] = 5
+	s.gardens[9] = 2
+	s.gardens[21] = 4
+	s.gardens[23] = 2
+	gardens := []int{1, 9, 21, 23}
+
+	for i := 0; i < b.N; i++ {
+		s.hash = make(map[string]bool, 10000)
+		s.tileMap = make(map[int]int, 100)
+		if !s.gardenSolve(gardens) {
+			b.Fatal("Failed to solve correctly")
+		}
+	}
+}
+
+func TestPerms(t *testing.T) {
+	if p := perms([]int{-1, 1, 5, -5}, make(map[string]bool, 100)); len(p) != 15 {
+		t.Fatal("Incorrect perm count", len(p), p)
+	}
 }
