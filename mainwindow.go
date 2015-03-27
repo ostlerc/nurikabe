@@ -1,7 +1,7 @@
 package main
 
 import (
-	"log"
+	"fmt"
 	"os"
 
 	"github.com/ostlerc/nurikabe/grid"
@@ -15,67 +15,108 @@ type window struct {
 	v     validator.GridValidator
 	tiles []qml.Object
 
-	status qml.Object
+	tileComponent qml.Object
+	comp          *qml.Window
 }
 
 func (w *window) TileChecked(i int) {
 	w.g.Toggle(i)
 	if w.v.CheckWin(w.g) {
-		w.status.Set("text", "Winner!")
+		w.status("Winner!")
 	} else {
-		w.status.Set("text", "Nurikabe")
+		w.status("Nurikabe")
 	}
 	if *verbose {
 		w.g.Print()
 	}
 }
 
-func ShowMainWindow(engine *qml.Engine) {
-	var g *grid.Grid
-	var err error
-
-	stat, _ := os.Stdin.Stat()
-	if (stat.Mode() & os.ModeCharDevice) == 0 {
-		g, err = grid.FromJson(os.Stdin)
-		if err != nil {
-			log.Fatal(err)
-		}
+func (w *window) MainMenuPressed() {
+	w.status("Nurikabe")
+	if w.qLoader().String("source") != "qml/main.qml" {
+		w.source("qml/main.qml")
 	} else {
-		g = grid.New(3, 3)
+		w.source("qml/game.qml")
+		w.setup("")
 	}
+}
 
+func (w *window) Level(s string) {
+	w.source("qml/game.qml")
+	w.setup("json/" + string(s[0]) + s[2:] + ".json")
+}
+
+func (w *window) setup(file string) {
+	if file != "" {
+		r, err := os.Open(file)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "failed to load json file "+file)
+			w.MainMenuPressed()
+			return
+		} else {
+			w.g, err = grid.FromJson(r)
+			if err != nil {
+				panic(err)
+			}
+			end := 7
+			if file[8] == '0' {
+				end = 8
+			}
+			w.status("Nurikabe - " + file[5:end])
+		}
+	}
+	l := w.g.Rows() * w.g.Columns()
+	w.qGrid().Set("columns", w.g.Columns())
+
+	w.tiles = make([]qml.Object, l, l)
+	for i := 0; i < l; i++ {
+		w.tiles[i] = w.tileComponent.Create(nil)
+		w.tiles[i].Set("parent", w.qGrid())
+		w.tiles[i].Set("index", i)
+		w.tiles[i].Set("count", w.g.Count(i))
+	}
+}
+
+func (w *window) status(s string) {
+	w.qStatus().Set("text", s)
+}
+
+func (w *window) source(page string) {
+	w.qLoader().Set("source", page)
+}
+
+func (w *window) qStatus() qml.Object {
+	return w.comp.Root().ObjectByName("statusText")
+}
+func (w *window) qGrid() qml.Object {
+	return w.comp.Root().ObjectByName("grid")
+}
+
+func (w *window) qLoader() qml.Object {
+	return w.comp.Root().ObjectByName("pageLoader")
+}
+
+func RunNurikabe(engine *qml.Engine) error {
 	context := engine.Context()
 
-	tileComponent, err := engine.LoadFile("qml/tile.qml")
-	if err != nil {
-		panic(err)
-	}
 	nurikabeComponent, err := engine.LoadFile("qml/nurikabe.qml")
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
-	comp := nurikabeComponent.CreateWindow(nil)
-	qmlgrid := comp.Root().ObjectByName("grid")
 	window := &window{
-		g:      g,
-		status: comp.Root().ObjectByName("statusText"),
-		v:      validator.NewNurikabe(),
+		v:    validator.NewNurikabe(),
+		comp: nurikabeComponent.CreateWindow(nil),
+	}
+
+	window.tileComponent, err = engine.LoadFile("qml/tile.qml")
+	if err != nil {
+		return err
 	}
 	context.SetVar("window", window)
-	qmlgrid.Set("columns", g.Columns())
+	window.MainMenuPressed()
 
-	l := g.Rows() * g.Columns()
-	tiles := make([]qml.Object, l, l)
-	for i := 0; i < l; i++ {
-		tiles[i] = tileComponent.Create(nil)
-		tiles[i].Set("parent", qmlgrid)
-		tiles[i].Set("index", i)
-		tiles[i].Set("count", g.Count(i))
-	}
-
-	window.tiles = tiles
-
-	comp.Show()
-	comp.Wait()
+	window.comp.Show()
+	window.comp.Wait()
+	return nil
 }

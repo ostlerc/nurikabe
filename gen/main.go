@@ -44,24 +44,21 @@ func main() {
 	} else {
 		g = grid.New(*height, *width)
 		g.Generate(v, *min, *growth, *base)
-		if *verbose {
-			j, err := g.Json()
-			if err != nil {
-				panic(err)
-			}
-			fmt.Println(string(j))
-		}
-		if !v.CheckWin(g) {
-			g.Print()
-			panic("Fail")
-		}
+		g.Print()
+		fmt.Println("")
 	}
 
-	g.Print()
-	fmt.Println("")
 	if *solve {
 		g.Solve(v, *smart)
+		defer g.Print()
+		if !v.CheckWin(g) {
+			panic("Fail")
+		}
 		fmt.Println("solved")
-		g.Print()
+		j, err := g.Json()
+		if err != nil {
+			panic(err)
+		}
+		fmt.Println(string(j))
 	}
 }

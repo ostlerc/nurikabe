@@ -29,6 +29,5 @@ func main() {
 
 func run() error {
 	engine := qml.NewEngine()
-	ShowMainWindow(engine)
-	return nil
+	return RunNurikabe(engine)
 }

@@ -1,11 +1,11 @@
 import QtQuick 2.2
 import QtQuick.Controls 1.0
 import QtQuick.Layouts 1.1
-import QtQuick.Dialogs 1.0
 
 ApplicationWindow {
-    width: 200
-    height: 200
+    id: app
+    width: 300
+    height: 300
     color: "white"
     ColumnLayout {
         id: screen
@@ -27,30 +27,36 @@ ApplicationWindow {
                 }
             }
         }
-        Rectangle {
+
+        Loader {
+            id: pageLoader
+            objectName: "pageLoader"
             Layout.fillHeight: true
             Layout.fillWidth: true
-            Flickable {
-                clip: true
-                boundsBehavior: Flickable.StopAtBounds
-                anchors.centerIn: parent
-                width: { return Math.min(parent.width, g.width) }
-                height: { return Math.min(parent.height, g.height) }
-                contentWidth: g.width; contentHeight: g.height
-                flickableDirection: Flickable.HorizontalAndVerticalFlick
-                Grid {
-                    id: g
-                    objectName: "grid"
-                    spacing: 1
-                }
-            }
+            source: "game.qml"
         }
+
         Rectangle {
             id: botBorder
-            height: 1
-            Layout.minimumHeight: 1
+            height: statusRow.height + 10
+            border.color: "black"
+            border.width: 1
             Layout.fillWidth: true
-            color: "black"
+            RowLayout{
+                anchors.fill: parent
+                Button {
+                    id: menuBtn
+                    anchors.left: parent.left
+                    text: "Menu"
+                    onClicked: window.mainMenuPressed()
+                }
+                Button {
+                    id: nextBtn
+                    anchors.right: parent.right
+                    text: "Next"
+                    visible: false
+                }
+            }
         }
     }
 }

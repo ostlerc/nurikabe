@@ -1,11 +1,18 @@
 add validator tests [x]
 add generation [x]
 add dumb solver [x]
-add better solver
+add better solver [x]
+
 generate levels
  - 10 easy
  - 10 medium
  - 10 hard
 
 add main menu
+ - level choosing [x]
+ - fix menu button text and disable/hide from main menu
+ - color completed levels
  - add stat keeping
+ - rules page
+ - stat viewing
+ - polish
