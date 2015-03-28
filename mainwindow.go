@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"sort"
 
 	"github.com/ostlerc/nurikabe/grid"
 	"github.com/ostlerc/nurikabe/stats"
@@ -110,10 +111,14 @@ func (w *window) buildBtns() {
 
 	l := len(files)
 	w.btns = make([]qml.Object, l, l)
-
+	names := make([]string, l, l)
 	for i, f := range files {
-		name := f.Name()
-		name = name[:len(name)-5]
+		names[i] = f.Name()[:len(f.Name())-5]
+	}
+
+	sort.Strings(names)
+
+	for i, name := range names {
 		_, ok := w.records.Stats[name]
 		w.btns[i] = w.btnComponent.Create(nil)
 		w.btns[i].Set("parent", w.qBtnGrid())

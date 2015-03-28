@@ -18,6 +18,7 @@ var (
 	base   = flag.Int("base", 2, "minimum garden size")
 
 	verbose = flag.Bool("v", false, "Verbose")
+	debug   = flag.Bool("debug", false, "enable debug output")
 	solve   = flag.Bool("solve", false, "solve generated grid")
 	smart   = flag.Bool("smart", true, "solve using smart algorithm")
 )
@@ -27,7 +28,7 @@ func init() {
 }
 
 func main() {
-	validator.Verbose = *verbose
+	validator.Verbose = *debug
 	v := validator.NewNurikabe()
 	var g *grid.Grid
 	var err error
@@ -44,8 +45,10 @@ func main() {
 	} else {
 		g = grid.New(*height, *width)
 		g.Generate(v, *min, *growth, *base)
-		g.Print()
-		fmt.Println("")
+		if *verbose {
+			g.Print()
+			fmt.Println("")
+		}
 	}
 
 	if *solve {
@@ -55,10 +58,10 @@ func main() {
 			panic("Fail")
 		}
 		fmt.Println("solved")
-		j, err := g.Json()
-		if err != nil {
-			panic(err)
-		}
-		fmt.Println(string(j))
 	}
+	j, err := g.Json()
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(string(j))
 }

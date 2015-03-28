@@ -44,7 +44,7 @@ func (r *Records) String(file string) string {
 	if rec, ok := r.Stats[file]; !ok {
 		return ""
 	} else {
-		return "record: " + strconv.Itoa(rec.Steps) + " steps, " + strconv.Itoa(rec.Seconds) + "seconds"
+		return "record: " + strconv.Itoa(rec.Steps) + " steps, " + strconv.Itoa(rec.Seconds) + " seconds  "
 	}
 }
 

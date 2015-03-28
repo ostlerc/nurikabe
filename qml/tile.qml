@@ -3,8 +3,8 @@ import QtQuick 2.0
 Rectangle {
     id: tile
     state: "open"
-    width: 25
-    height: 25
+    width: 40
+    height: 40
     border.width: 5
     border.color: "black"
     color: "white"

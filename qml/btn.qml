@@ -12,7 +12,7 @@ Button {
     style: ButtonStyle {
         label: Text {
           renderType: Text.NativeRendering
-          font.pointSize: 21
+          font.pointSize: 20
           color: "black"
           text: control.text
         }
