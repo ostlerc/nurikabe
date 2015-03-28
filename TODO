@@ -10,9 +10,10 @@ generate levels
 
 add main menu
  - level choosing [x]
- - fix menu button text and disable/hide from main menu
- - color completed levels
- - add stat keeping
+ - fix menu button text and disable/hide from main menu [x]
+ - color completed levels [x]
+ - add stat keeping [x]
+ - main page, easy/medium/hard buttons
  - rules page
- - stat viewing
+ - stat viewing [partially]
  - polish
