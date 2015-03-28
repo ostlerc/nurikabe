@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 
 	"github.com/ostlerc/nurikabe/grid"
@@ -19,9 +20,11 @@ type window struct {
 	g       *grid.Grid
 	v       validator.GridValidator
 	tiles   []qml.Object
+	btns    []qml.Object
 	records *stats.Records
 
 	tileComponent qml.Object
+	btnComponent  qml.Object
 	comp          *qml.Window
 	currentBoard  string
 }
@@ -55,12 +58,9 @@ func (w *window) setGameMode(show bool) {
 }
 
 func (w *window) MainMenuPressed() {
+	w.source("qml/main.qml")
 	w.setGameMode(false)
-	if w.qLoader().String("source") != "qml/main.qml" {
-		w.source("qml/main.qml")
-	} else {
-		w.Level("")
-	}
+	w.buildBtns()
 }
 
 func (w *window) Level(s string) {
@@ -84,15 +84,42 @@ func (w *window) loadLevel(file string) {
 			w.setGameMode(true)
 		}
 	}
+	w.buildGrid()
+}
+
+func (w *window) buildGrid() {
 	l := w.g.Rows() * w.g.Columns()
-	w.qGrid().Set("columns", w.g.Columns())
+	w.qGameGrid().Set("columns", w.g.Columns())
 
 	w.tiles = make([]qml.Object, l, l)
 	for i := 0; i < l; i++ {
 		w.tiles[i] = w.tileComponent.Create(nil)
-		w.tiles[i].Set("parent", w.qGrid())
+		w.tiles[i].Set("parent", w.qGameGrid())
 		w.tiles[i].Set("index", i)
 		w.tiles[i].Set("count", w.g.Count(i))
+	}
+}
+
+func (w *window) buildBtns() {
+	w.qBtnGrid().Set("columns", 5)
+
+	files, err := ioutil.ReadDir("levels/")
+	if err != nil {
+		panic(err)
+	}
+
+	l := len(files)
+	w.btns = make([]qml.Object, l, l)
+
+	for i, f := range files {
+		name := f.Name()
+		name = name[:len(name)-5]
+		_, ok := w.records.Stats[name]
+		w.btns[i] = w.btnComponent.Create(nil)
+		w.btns[i].Set("parent", w.qBtnGrid())
+		w.btns[i].Set("text", name)
+		w.btns[i].Set("completed", ok)
+		w.btns[i].Set("color", "silver")
 	}
 }
 
@@ -107,8 +134,13 @@ func (w *window) source(page string) {
 func (w *window) qStatus() qml.Object {
 	return w.comp.Root().ObjectByName("statusText")
 }
-func (w *window) qGrid() qml.Object {
+
+func (w *window) qGameGrid() qml.Object {
 	return w.comp.Root().ObjectByName("grid")
+}
+
+func (w *window) qBtnGrid() qml.Object {
+	return w.comp.Root().ObjectByName("btnGrid")
 }
 
 func (w *window) qLoader() qml.Object {
@@ -148,10 +180,16 @@ func RunNurikabe(engine *qml.Engine) error {
 	if err != nil {
 		return err
 	}
+
+	window.btnComponent, err = engine.LoadFile("qml/btn.qml")
+	if err != nil {
+		return err
+	}
+
 	context.SetVar("window", window)
 	window.records, err = stats.Load(StatsFile)
 	if err != nil {
-		fmt.Println("Error loading stats", err, StatsFile)
+		fmt.Println("Error loading stats", err)
 		window.records = stats.New()
 	}
 	window.MainMenuPressed()
