@@ -20,6 +20,7 @@ type window struct {
 }
 
 func (w *window) TileChecked(i int) {
+	w.qStepsText().Set("moves", w.qStepsText().Int("moves")+1)
 	w.g.Toggle(i)
 	if w.v.CheckWin(w.g) {
 		w.status("Winner!")
@@ -31,8 +32,15 @@ func (w *window) TileChecked(i int) {
 	}
 }
 
+func (w *window) setGameVisibility(show bool) {
+	w.qMenuBtn().Set("visible", show)
+	w.qStepsText().Set("visible", show)
+	w.qTimeText().Set("visible", show)
+}
+
 func (w *window) MainMenuPressed() {
 	w.status("Nurikabe")
+	w.setGameVisibility(false)
 	if w.qLoader().String("source") != "qml/main.qml" {
 		w.source("qml/main.qml")
 	} else {
@@ -63,6 +71,9 @@ func (w *window) setup(file string) {
 				end = 8
 			}
 			w.status("Nurikabe - " + file[5:end])
+			w.setGameVisibility(true)
+			w.qMenuBtn().Set("visible", true)
+			w.qStepsText().Set("visible", true)
 		}
 	}
 	l := w.g.Rows() * w.g.Columns()
@@ -94,6 +105,18 @@ func (w *window) qGrid() qml.Object {
 
 func (w *window) qLoader() qml.Object {
 	return w.comp.Root().ObjectByName("pageLoader")
+}
+
+func (w *window) qMenuBtn() qml.Object {
+	return w.comp.Root().ObjectByName("menuBtn")
+}
+
+func (w *window) qStepsText() qml.Object {
+	return w.comp.Root().ObjectByName("movesText")
+}
+
+func (w *window) qTimeText() qml.Object {
+	return w.comp.Root().ObjectByName("timerText")
 }
 
 func RunNurikabe(engine *qml.Engine) error {

@@ -2,29 +2,46 @@ import QtQuick 2.0
 
 Rectangle {
     id: tile
-    property bool open: true
-    property int count: 0
-    property int index: 0
+    state: "open"
     width: 25
     height: 25
     border.width: 5
     border.color: "black"
-    color: open ? "white" : "black"
+    color: "white"
+
+    property int count: 0
+    property int index: 0
+
+    states: [
+        State {
+            name: "open"
+            PropertyChanges { target: tile; color: "white" }
+        },
+        State {
+            name: "closed"
+            PropertyChanges { target: tile; color: "black" }
+        }
+    ]
+
+    transitions: Transition {
+        ColorAnimation {  properties: "color"; duration: 150 }
+    }
+
     Text {
         anchors.centerIn: parent
-        font.pixelSize: 10
+        font.pixelSize: 12
         color: "black"
         visible: count > 0
         text: count
     }
+
     MouseArea {
         id: mouseArea
         anchors.fill: parent
-        hoverEnabled: true
         acceptedButtons: Qt.LeftButton | Qt.RightButton
         onClicked: {
             if (count > 0) return
-            open = !open
+            tile.state = tile.state == "open" ? "closed" : "open"
             window.tileChecked(index);
         }
     }

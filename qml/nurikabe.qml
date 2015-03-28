@@ -3,33 +3,64 @@ import QtQuick.Controls 1.0
 import QtQuick.Layouts 1.1
 
 ApplicationWindow {
-    id: app
     width: 300
     height: 300
     color: "white"
     ColumnLayout {
-        id: screen
         anchors.fill: parent
         spacing: 0
+
         Rectangle {
-            id: statusRect
             Layout.fillWidth: true
-            Layout.preferredHeight: statusRow.height + 10
+            Layout.preferredHeight: statusText.height + 10
             border.color: "black"
             border.width: 1
-            RowLayout {
-                id: statusRow
-                anchors { verticalCenter: parent.verticalCenter; margins: 5; horizontalCenter: parent.horizontalCenter }
-                Text {
-                    id: statusText
-                    objectName: "statusText"
-                    text: "Nurikabe"
+            Text {
+                id: statusText
+                anchors {
+                    verticalCenter: parent.verticalCenter
+                    horizontalCenter: parent.horizontalCenter
+                    margins: 5;
+                }
+                objectName: "statusText"
+                text: "Nurikabe"
+            }
+            Text {
+                property int moves: 0
+                anchors {
+                    verticalCenter: parent.verticalCenter
+                    left: parent.left
+                    margins: 5;
+                }
+                objectName: "movesText"
+                text: "steps: " + moves
+                onVisibleChanged: {
+                    moves = 0
+                }
+            }
+            Timer {
+                interval: 200; running: true; repeat: true
+                onTriggered: timerText.seconds = Math.floor((new Date().getTime() - timerText.start.getTime()) / 1000)
+            }
+            Text {
+                id: timerText
+                property date start: new Date()
+                property int seconds: 0
+                anchors {
+                    verticalCenter: parent.verticalCenter
+                    right: parent.right
+                    margins: 5;
+                }
+                objectName: "timerText"
+                visible: false
+                text: seconds
+                onVisibleChanged: {
+                    timerText.start = new Date()
                 }
             }
         }
 
         Loader {
-            id: pageLoader
             objectName: "pageLoader"
             Layout.fillHeight: true
             Layout.fillWidth: true
@@ -37,21 +68,19 @@ ApplicationWindow {
         }
 
         Rectangle {
-            id: botBorder
-            height: statusRow.height + 10
+            height: statusText.height + 10
             border.color: "black"
             border.width: 1
             Layout.fillWidth: true
             RowLayout{
                 anchors.fill: parent
                 Button {
-                    id: menuBtn
+                    objectName: "menuBtn"
                     anchors.left: parent.left
                     text: "Menu"
                     onClicked: window.mainMenuPressed()
                 }
                 Button {
-                    id: nextBtn
                     anchors.right: parent.right
                     text: "Next"
                     visible: false
