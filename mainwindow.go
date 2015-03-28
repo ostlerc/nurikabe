@@ -30,42 +30,46 @@ func (w *window) TileChecked(i int) {
 	w.qStepsText().Set("moves", w.qStepsText().Int("moves")+1)
 	w.g.Toggle(i)
 	if w.v.CheckWin(w.g) {
-		w.status("Winner!")
 		w.records.Log(w.currentBoard, w.qStepsText().Int("moves"), w.qTimeText().Int("seconds"))
 		w.records.Save(StatsFile)
+		w.setGameMode(true)
+		w.status("Winner!")
 	} else {
-		w.status("Nurikabe")
-	}
-	if *verbose {
-		w.g.Print()
+		w.setGameMode(true)
 	}
 }
 
-func (w *window) setGameVisibility(show bool) {
+func (w *window) setGameMode(show bool) {
+	if show {
+		w.status("Nurikabe - " + w.currentBoard)
+		w.qRecordText().Set("text", w.records.String(w.currentBoard))
+
+	} else {
+		w.currentBoard = ""
+		w.status("Nurikabe")
+	}
 	w.qMenuBtn().Set("visible", show)
 	w.qStepsText().Set("visible", show)
 	w.qTimeText().Set("visible", show)
+	w.qRecordText().Set("visible", show)
 }
 
 func (w *window) MainMenuPressed() {
-	w.status("Nurikabe")
-	w.setGameVisibility(false)
-	w.currentBoard = ""
+	w.setGameMode(false)
 	if w.qLoader().String("source") != "qml/main.qml" {
 		w.source("qml/main.qml")
 	} else {
-		w.source("qml/game.qml")
-		w.setup("")
+		w.Level("")
 	}
 }
 
 func (w *window) Level(s string) {
 	w.source("qml/game.qml")
 	w.currentBoard = s
-	w.setup("json/" + s + ".json")
+	w.loadLevel("levels/" + s + ".json")
 }
 
-func (w *window) setup(file string) {
+func (w *window) loadLevel(file string) {
 	if file != "" {
 		r, err := os.Open(file)
 		if err != nil {
@@ -77,14 +81,7 @@ func (w *window) setup(file string) {
 			if err != nil {
 				panic(err)
 			}
-			end := 7
-			if file[8] == '0' {
-				end = 8
-			}
-			w.status("Nurikabe - " + file[5:end])
-			w.setGameVisibility(true)
-			w.qMenuBtn().Set("visible", true)
-			w.qStepsText().Set("visible", true)
+			w.setGameMode(true)
 		}
 	}
 	l := w.g.Rows() * w.g.Columns()
@@ -130,6 +127,10 @@ func (w *window) qTimeText() qml.Object {
 	return w.comp.Root().ObjectByName("timerText")
 }
 
+func (w *window) qRecordText() qml.Object {
+	return w.comp.Root().ObjectByName("recordText")
+}
+
 func RunNurikabe(engine *qml.Engine) error {
 	context := engine.Context()
 
@@ -150,6 +151,7 @@ func RunNurikabe(engine *qml.Engine) error {
 	context.SetVar("window", window)
 	window.records, err = stats.Load(StatsFile)
 	if err != nil {
+		fmt.Println("Error loading stats", err, StatsFile)
 		window.records = stats.New()
 	}
 	window.MainMenuPressed()

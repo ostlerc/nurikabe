@@ -17,6 +17,7 @@ Rectangle {
                 property string d: modelData
                 model: 10
                 Button {
+                    objectName: modelData + (index + 1) + "Btn"
                     text: d + " " + (index + 1)
                     onClicked: window.level(text[0] + text.substring(2))
                 }

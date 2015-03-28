@@ -38,11 +38,11 @@ ApplicationWindow {
                     moves = 0
                 }
             }
-            Timer {
-                interval: 200; running: true; repeat: true
-                onTriggered: timerText.seconds = Math.floor((new Date().getTime() - timerText.start.getTime()) / 1000)
-            }
             Text {
+                Timer {
+                    interval: 200; running: true; repeat: true
+                    onTriggered: timerText.seconds = Math.floor((new Date().getTime() - timerText.start.getTime()) / 1000)
+                }
                 id: timerText
                 property date start: new Date()
                 property int seconds: 0
@@ -53,9 +53,10 @@ ApplicationWindow {
                 }
                 objectName: "timerText"
                 visible: false
-                text: seconds
+                text: "time: " + seconds
                 onVisibleChanged: {
                     timerText.start = new Date()
+                    timerText.seconds = 0
                 }
             }
         }
@@ -79,6 +80,14 @@ ApplicationWindow {
                     anchors.left: parent.left
                     text: "Menu"
                     onClicked: window.mainMenuPressed()
+                }
+
+                Text {
+                    objectName: "recordText"
+                    anchors.right: parent.right
+                    property int moves: 0
+                    property int seconds: 0
+                    visible: false
                 }
             }
         }

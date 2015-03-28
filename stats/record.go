@@ -3,8 +3,10 @@ package stats
 import (
 	"bufio"
 	"encoding/json"
+	"io"
 	"io/ioutil"
 	"os"
+	"strconv"
 )
 
 type Records struct {
@@ -12,9 +14,8 @@ type Records struct {
 }
 
 type LevelRecord struct {
-	Name    string `json:"name,omitempty"`
-	Steps   int    `json:"steps,omitempty"`
-	Seconds int    `json:"seconds,omitempty"`
+	Steps   int `json:"steps,omitempty"`
+	Seconds int `json:"seconds,omitempty"`
 }
 
 func New() *Records {
@@ -29,7 +30,7 @@ func Load(file string) (*Records, error) {
 	}
 	r := bufio.NewReader(reader)
 	dat, err := r.ReadBytes('\n')
-	if err != nil {
+	if err != nil && err != io.EOF {
 		return nil, err
 	}
 	err = json.Unmarshal(dat, recs)
@@ -37,6 +38,14 @@ func Load(file string) (*Records, error) {
 		return nil, err
 	}
 	return recs, nil
+}
+
+func (r *Records) String(file string) string {
+	if rec, ok := r.Stats[file]; !ok {
+		return ""
+	} else {
+		return "record: " + strconv.Itoa(rec.Steps) + " steps, " + strconv.Itoa(rec.Seconds) + "seconds"
+	}
 }
 
 func (r *Records) Save(file string) error {
