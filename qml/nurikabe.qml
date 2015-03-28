@@ -3,8 +3,9 @@ import QtQuick.Controls 1.0
 import QtQuick.Layouts 1.1
 
 ApplicationWindow {
+    objectName: "mainwindow"
     width: 300
-    height: 300
+    height: 350
     color: "white"
     ColumnLayout {
         anchors.fill: parent

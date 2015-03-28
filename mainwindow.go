@@ -93,11 +93,18 @@ func (w *window) buildGrid() {
 	w.qGameGrid().Set("columns", w.g.Columns())
 
 	w.tiles = make([]qml.Object, l, l)
+	dimension := w.g.Columns()
+	if w.g.Rows() > dimension {
+		dimension = w.g.Rows()
+	}
+	dimension = 260 / dimension
 	for i := 0; i < l; i++ {
 		w.tiles[i] = w.tileComponent.Create(nil)
 		w.tiles[i].Set("parent", w.qGameGrid())
 		w.tiles[i].Set("index", i)
 		w.tiles[i].Set("count", w.g.Count(i))
+		w.tiles[i].Set("width", dimension)
+		w.tiles[i].Set("height", dimension)
 	}
 }
 
