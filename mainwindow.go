@@ -20,7 +20,6 @@ const (
 type window struct {
 	g       *grid.Grid
 	v       validator.GridValidator
-	tiles   []qml.Object
 	btns    []qml.Object
 	records *stats.Records
 
@@ -36,36 +35,45 @@ func (w *window) TileChecked(i int) {
 	if w.v.CheckWin(w.g) {
 		w.records.Log(w.currentBoard, w.qStepsText().Int("moves"), w.qTimeText().Int("seconds"))
 		w.records.Save(StatsFile)
-		w.setGameMode(true)
 		w.status("Winner!")
-	} else {
-		w.setGameMode(true)
 	}
 }
 
-func (w *window) setGameMode(show bool) {
-	if show {
+type GameMode int
+
+const (
+	DifficultySelect = iota
+	LevelSelect
+	Nurikabe
+)
+
+func (w *window) setGameMode(mode GameMode) {
+	w.clearGrid()
+	w.source("qml/game.qml")
+	if mode == Nurikabe {
 		w.status("Nurikabe - " + w.currentBoard)
 		w.qRecordText().Set("text", w.records.String(w.currentBoard))
+		w.qGameGrid().Set("spacing", 1)
+		w.buildNurikabeGrid()
 
 	} else {
 		w.currentBoard = ""
 		w.status("Nurikabe")
+		w.buildLevelSelect()
+		w.qGameGrid().Set("spacing", 15)
 	}
-	w.qMenuBtn().Set("visible", show)
-	w.qStepsText().Set("visible", show)
-	w.qTimeText().Set("visible", show)
-	w.qRecordText().Set("visible", show)
+
+	w.qMenuBtn().Set("visible", mode == Nurikabe)
+	w.qStepsText().Set("visible", mode == Nurikabe)
+	w.qTimeText().Set("visible", mode == Nurikabe)
+	w.qRecordText().Set("visible", mode == Nurikabe)
 }
 
 func (w *window) MainMenuPressed() {
-	w.source("qml/main.qml")
-	w.setGameMode(false)
-	w.buildBtns()
+	w.setGameMode(LevelSelect)
 }
 
 func (w *window) Level(s string) {
-	w.source("qml/game.qml")
 	w.currentBoard = s
 	w.loadLevel("levels/" + s + ".json")
 }
@@ -75,41 +83,53 @@ func (w *window) loadLevel(file string) {
 		r, err := os.Open(file)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, "failed to load json file "+file)
-			w.MainMenuPressed()
+			w.setGameMode(LevelSelect)
 			return
 		} else {
 			w.g, err = grid.FromJson(r)
 			if err != nil {
 				panic(err)
 			}
-			w.setGameMode(true)
+			w.setGameMode(Nurikabe)
 		}
 	}
-	w.buildGrid()
 }
 
-func (w *window) buildGrid() {
+func (w *window) clearGrid() {
+	for i, _ := range w.btns {
+		w.btns[i].Set("visible", false)
+		w.btns[i].Destroy()
+	}
+	w.btns = nil
+}
+
+func (w *window) buildNurikabeGrid() {
 	l := w.g.Rows() * w.g.Columns()
 	w.qGameGrid().Set("columns", w.g.Columns())
 
-	w.tiles = make([]qml.Object, l, l)
+	w.clearGrid()
+	w.btns = make([]qml.Object, l, l)
 	dimension := w.g.Columns()
-	if w.g.Rows() > dimension {
-		dimension = w.g.Rows()
+	if rows := w.g.Rows(); rows > dimension {
+		dimension = rows
 	}
-	dimension = 260 / dimension
+	windowDim := w.comp.Root().Int("width") - 50
+	if height := w.comp.Root().Int("height"); height < windowDim {
+		windowDim = height
+	}
+	dimension = windowDim / dimension
 	for i := 0; i < l; i++ {
-		w.tiles[i] = w.tileComponent.Create(nil)
-		w.tiles[i].Set("parent", w.qGameGrid())
-		w.tiles[i].Set("index", i)
-		w.tiles[i].Set("count", w.g.Count(i))
-		w.tiles[i].Set("width", dimension)
-		w.tiles[i].Set("height", dimension)
+		w.btns[i] = w.tileComponent.Create(nil)
+		w.btns[i].Set("parent", w.qGameGrid())
+		w.btns[i].Set("index", i)
+		w.btns[i].Set("count", w.g.Count(i))
+		w.btns[i].Set("width", dimension)
+		w.btns[i].Set("height", dimension)
 	}
 }
 
-func (w *window) buildBtns() {
-	w.qBtnGrid().Set("columns", 5)
+func (w *window) buildLevelSelect() {
+	w.qGameGrid().Set("columns", 5)
 
 	files, err := ioutil.ReadDir("levels/")
 	if err != nil {
@@ -128,7 +148,7 @@ func (w *window) buildBtns() {
 	for i, name := range names {
 		_, ok := w.records.Stats[name]
 		w.btns[i] = w.btnComponent.Create(nil)
-		w.btns[i].Set("parent", w.qBtnGrid())
+		w.btns[i].Set("parent", w.qGameGrid())
 		w.btns[i].Set("text", name)
 		w.btns[i].Set("completed", ok)
 		w.btns[i].Set("color", "silver")
@@ -149,10 +169,6 @@ func (w *window) qStatus() qml.Object {
 
 func (w *window) qGameGrid() qml.Object {
 	return w.comp.Root().ObjectByName("grid")
-}
-
-func (w *window) qBtnGrid() qml.Object {
-	return w.comp.Root().ObjectByName("btnGrid")
 }
 
 func (w *window) qLoader() qml.Object {
@@ -204,7 +220,7 @@ func RunNurikabe(engine *qml.Engine) error {
 		fmt.Println("Error loading stats", err)
 		window.records = stats.New()
 	}
-	window.MainMenuPressed()
+	window.setGameMode(LevelSelect)
 
 	window.comp.Show()
 	window.comp.Wait()
