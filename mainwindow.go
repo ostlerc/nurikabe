@@ -5,18 +5,25 @@ import (
 	"os"
 
 	"github.com/ostlerc/nurikabe/grid"
+	"github.com/ostlerc/nurikabe/stats"
 	"github.com/ostlerc/nurikabe/validator"
 
 	"gopkg.in/qml.v1"
 )
 
+const (
+	StatsFile = ".stats.json"
+)
+
 type window struct {
-	g     *grid.Grid
-	v     validator.GridValidator
-	tiles []qml.Object
+	g       *grid.Grid
+	v       validator.GridValidator
+	tiles   []qml.Object
+	records *stats.Records
 
 	tileComponent qml.Object
 	comp          *qml.Window
+	currentBoard  string
 }
 
 func (w *window) TileChecked(i int) {
@@ -24,6 +31,8 @@ func (w *window) TileChecked(i int) {
 	w.g.Toggle(i)
 	if w.v.CheckWin(w.g) {
 		w.status("Winner!")
+		w.records.Log(w.currentBoard, w.qStepsText().Int("moves"), w.qTimeText().Int("seconds"))
+		w.records.Save(StatsFile)
 	} else {
 		w.status("Nurikabe")
 	}
@@ -41,6 +50,7 @@ func (w *window) setGameVisibility(show bool) {
 func (w *window) MainMenuPressed() {
 	w.status("Nurikabe")
 	w.setGameVisibility(false)
+	w.currentBoard = ""
 	if w.qLoader().String("source") != "qml/main.qml" {
 		w.source("qml/main.qml")
 	} else {
@@ -51,7 +61,8 @@ func (w *window) MainMenuPressed() {
 
 func (w *window) Level(s string) {
 	w.source("qml/game.qml")
-	w.setup("json/" + string(s[0]) + s[2:] + ".json")
+	w.currentBoard = s
+	w.setup("json/" + s + ".json")
 }
 
 func (w *window) setup(file string) {
@@ -137,9 +148,14 @@ func RunNurikabe(engine *qml.Engine) error {
 		return err
 	}
 	context.SetVar("window", window)
+	window.records, err = stats.Load(StatsFile)
+	if err != nil {
+		window.records = stats.New()
+	}
 	window.MainMenuPressed()
 
 	window.comp.Show()
 	window.comp.Wait()
+	window.records.Save(StatsFile)
 	return nil
 }

@@ -18,7 +18,7 @@ Rectangle {
                 model: 10
                 Button {
                     text: d + " " + (index + 1)
-                    onClicked: window.level(text)
+                    onClicked: window.level(text[0] + text.substring(2))
                 }
             }
         }

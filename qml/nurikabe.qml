@@ -80,11 +80,6 @@ ApplicationWindow {
                     text: "Menu"
                     onClicked: window.mainMenuPressed()
                 }
-                Button {
-                    anchors.right: parent.right
-                    text: "Next"
-                    visible: false
-                }
             }
         }
     }
