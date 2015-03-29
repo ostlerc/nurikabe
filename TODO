@@ -4,9 +4,9 @@ add dumb solver [x]
 add better solver [x]
 
 generate levels
- - 10 easy
- - 10 medium
- - 10 hard
+ - 20 easy
+ - 20 medium
+ - 20 hard
 
 add main menu
  - level choosing [x]
@@ -14,6 +14,7 @@ add main menu
  - color completed levels [x]
  - add stat keeping [x]
  - main page, easy/medium/hard buttons [x]
+ - start page [x]
  - rules page
  - stat viewing [partially]
  - polish
