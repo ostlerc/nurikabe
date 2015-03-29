@@ -24,7 +24,6 @@ type window struct {
 	records *stats.Records
 
 	tileComponent qml.Object
-	lvlComponent  qml.Object
 	btnComponent  qml.Object
 	winComponent  *qml.Window
 
@@ -98,14 +97,20 @@ func (w *window) MainMenuClicked() {
 	}
 }
 
-func (w *window) OnLevelClicked(file string) {
-	w.currentBoard = file
-	w.loadLevel("levels/" + w.currentDifficulty + "/" + file)
+func (w *window) OnBtnClicked(data string) {
+	switch w.currentMode {
+	case DifficultySelect:
+		w.currentDifficulty = data
+		w.setGameMode(LevelSelect)
+	case LevelSelect:
+		w.currentBoard = data
+		w.loadLevel("levels/" + w.currentDifficulty + "/" + data)
+	case Nurikabe: //This is handled by TileChecked
+		panic("Err")
+	}
 }
 
 func (w *window) OnDifficultyClicked(s string) {
-	w.currentDifficulty = s
-	w.setGameMode(LevelSelect)
 }
 
 func (w *window) loadLevel(file string) {
@@ -167,8 +172,9 @@ func (w *window) buildDifficultySelect() {
 		w.objs[i] = w.btnComponent.Create(nil)
 		w.objs[i].Set("parent", w.qGameGrid())
 		w.objs[i].Set("text", name[2:])
-		w.objs[i].Set("file", name)
-		w.objs[i].Set("color", "silver")
+		w.objs[i].Set("data", name)
+		w.objs[i].Set("alignCenter", true)
+		w.objs[i].Set("width", w.winComponent.Root().Int("width")-150)
 	}
 }
 
@@ -179,12 +185,13 @@ func (w *window) buildLevelSelect() {
 	w.objs = make([]qml.Object, len(names), len(names))
 	for i, name := range names {
 		_, ok := w.records.Stats[name]
-		w.objs[i] = w.lvlComponent.Create(nil)
+		w.objs[i] = w.btnComponent.Create(nil)
 		w.objs[i].Set("parent", w.qGameGrid())
 		w.objs[i].Set("text", name[:len(name)-5]) //remove '.json' from name
-		w.objs[i].Set("file", name)
+		w.objs[i].Set("data", name)
+		w.objs[i].Set("showstar", true)
 		w.objs[i].Set("completed", ok)
-		w.objs[i].Set("color", "silver")
+		w.objs[i].Set("width", 50)
 	}
 }
 
@@ -271,11 +278,6 @@ func RunNurikabe(engine *qml.Engine) error {
 	}
 
 	window.tileComponent, err = engine.LoadFile("qml/tile.qml")
-	if err != nil {
-		return err
-	}
-
-	window.lvlComponent, err = engine.LoadFile("qml/level_select.qml")
 	if err != nil {
 		return err
 	}
