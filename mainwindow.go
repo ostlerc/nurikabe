@@ -162,10 +162,22 @@ func (w *window) TileChecked(i int) {
 	w.qStepsText().Set("moves", w.qStepsText().Int("moves")+1)
 	w.g.Toggle(i)
 	if w.v.CheckWin(w.g) {
-		w.records.Log(w.currentBoard, w.currentDifficulty, w.qStepsText().Int("moves"), w.qTimeText().Int("seconds"))
+		w.records.Log(w.currentDifficulty, levelInt(w.currentBoard), w.qStepsText().Int("moves"), w.qTimeText().Int("seconds"))
 		w.records.Save(statsFile)
 		w.setStatus("Winner!")
 	}
+}
+
+func levelInt(file string) int {
+	ret, err := strconv.Atoi(levelStr(file))
+	if err != nil {
+		panic(err)
+	}
+	return ret
+}
+
+func levelStr(file string) string {
+	return file[:len(file)-5]
 }
 
 func (w *window) loadLevel(file string) {
@@ -194,8 +206,8 @@ func (w *window) clearGrid() {
 }
 
 func (w *window) buildNurikabeGrid() {
-	w.setStatus("Nurikabe - " + w.currentDifficulty[2:] + " " + w.currentBoard[:len(w.currentBoard)-5])
-	w.qRecordText().Set("text", w.records.String(w.currentBoard))
+	w.setStatus("Nurikabe - " + w.currentDifficulty[2:] + " " + levelStr(w.currentBoard))
+	w.qRecordText().Set("text", w.records.String(w.currentDifficulty, levelInt(w.currentBoard)))
 	w.qGameGrid().Set("spacing", 1)
 	w.qToolBtn().Set("text", "Back")
 
@@ -249,10 +261,10 @@ func (w *window) buildLevelSelect() {
 	names := files(levelDir + w.currentDifficulty)
 	w.objs = make([]qml.Object, len(names), len(names))
 	for i, name := range names {
-		_, ok := w.records.Level(name, w.currentDifficulty)
+		_, ok := w.records.Level(w.currentDifficulty, levelInt(name))
 		w.objs[i] = w.btnComponent.Create(nil)
 		w.objs[i].Set("parent", w.qGameGrid())
-		w.objs[i].Set("text", name[:len(name)-5]) //remove '.json' from name
+		w.objs[i].Set("text", levelStr(name)) //remove '.json' from name
 		w.objs[i].Set("data", name)
 		w.objs[i].Set("showstar", true)
 		w.objs[i].Set("completed", ok)
@@ -316,7 +328,7 @@ func (w *window) buildStats() {
 
 	for _, rec := range w.records.All() {
 		buildTxtBox(rec.Difficulty[2:])
-		buildTxtBox(rec.Name[:len(rec.Name)-5])
+		buildTxtBox(strconv.Itoa(rec.Lvl))
 		buildTxtBox(strconv.Itoa(rec.Steps))
 		buildTxtBox(strconv.Itoa(rec.Seconds))
 	}

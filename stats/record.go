@@ -15,8 +15,8 @@ type Records struct {
 	sorter map[string]int
 }
 
-func (r *Records) Level(key, difficulty string) (*LevelRecord, bool) {
-	v, ok := r.Stats[key+difficulty]
+func (r *Records) Level(difficulty string, lvl int) (*LevelRecord, bool) {
+	v, ok := r.Stats[strconv.Itoa(lvl)+difficulty]
 	return v, ok
 }
 
@@ -53,14 +53,14 @@ func (r *recordList) Swap(i, j int) {
 // Less is part of sort.Interface. It is implemented by calling the "by" closure in the sorter.
 func (r *recordList) Less(i, j int) bool {
 	if r.recs[i].Difficulty == r.recs[j].Difficulty {
-		return r.recs[i].Name < r.recs[j].Name
+		return r.recs[i].Lvl < r.recs[j].Lvl
 	}
 	return r.recs[i].Difficulty < r.recs[j].Difficulty
 }
 
 type LevelRecord struct {
-	Name       string
 	Difficulty string
+	Lvl        int
 	Steps      int `json:"steps,omitempty"`
 	Seconds    int `json:"seconds,omitempty"`
 }
@@ -87,8 +87,8 @@ func Load(file string, sorter map[string]int) (*Records, error) {
 	return recs, nil
 }
 
-func (r *Records) String(file string) string {
-	if rec, ok := r.Stats[file]; !ok {
+func (r *Records) String(difficulty string, lvl int) string {
+	if rec, ok := r.Stats[strconv.Itoa(lvl)+difficulty]; !ok {
 		return ""
 	} else {
 		return "record: " + strconv.Itoa(rec.Steps) + " steps, " + strconv.Itoa(rec.Seconds) + " seconds  "
@@ -104,14 +104,14 @@ func (r *Records) Save(file string) error {
 }
 
 //Returns true if new stats were better than previous
-func (r *Records) Log(name, difficulty string, steps, seconds int) bool {
-	key := name + difficulty
+func (r *Records) Log(difficulty string, lvl, steps, seconds int) bool {
+	key := strconv.Itoa(lvl) + difficulty
 	rec, ok := r.Stats[key]
 	defer func() {
 		r.Stats[key] = rec
 	}()
 	if !ok {
-		rec = &LevelRecord{Name: name, Difficulty: difficulty, Steps: steps, Seconds: seconds}
+		rec = &LevelRecord{Lvl: lvl, Difficulty: difficulty, Steps: steps, Seconds: seconds}
 		return true
 	}
 	if steps < rec.Steps {
