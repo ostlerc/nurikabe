@@ -2,8 +2,6 @@ import QtQuick 2.2
 import QtQuick.Layouts 1.1
 
 Rectangle {
-    Layout.fillHeight: true
-    Layout.fillWidth: true
     Flickable {
         clip: true
         boundsBehavior: Flickable.StopAtBounds
