@@ -24,9 +24,13 @@ type window struct {
 	records *stats.Records
 
 	tileComponent qml.Object
+	lvlComponent  qml.Object
 	btnComponent  qml.Object
 	comp          *qml.Window
-	currentBoard  string
+
+	currentDifficulty string
+	currentBoard      string
+	currentMode       GameMode
 }
 
 func (w *window) TileChecked(i int) {
@@ -48,34 +52,57 @@ const (
 )
 
 func (w *window) setGameMode(mode GameMode) {
+	w.currentMode = mode
 	w.clearGrid()
-	w.source("qml/game.qml")
-	if mode == Nurikabe {
-		w.status("Nurikabe - " + w.currentBoard)
+	w.setSource("qml/game.qml")
+	switch mode {
+	case Nurikabe:
+		w.status("Nurikabe - " + w.currentDifficulty[2:] + " " + w.currentBoard)
 		w.qRecordText().Set("text", w.records.String(w.currentBoard))
 		w.qGameGrid().Set("spacing", 1)
 		w.buildNurikabeGrid()
+		w.qMenuBtn().Set("text", "Back")
+		break
 
-	} else {
+	case LevelSelect:
 		w.currentBoard = ""
-		w.status("Nurikabe")
+		w.status("Nurikabe - " + w.currentDifficulty[2:])
 		w.buildLevelSelect()
+		w.qGameGrid().Set("spacing", 15)
+		w.qMenuBtn().Set("text", "Menu")
+		break
+	case DifficultySelect:
+		w.currentBoard = ""
+		w.currentDifficulty = ""
+		w.status("Nurikabe")
+		w.buildDifficultySelect()
 		w.qGameGrid().Set("spacing", 15)
 	}
 
-	w.qMenuBtn().Set("visible", mode == Nurikabe)
+	w.qMenuBtn().Set("visible", mode != DifficultySelect)
 	w.qStepsText().Set("visible", mode == Nurikabe)
 	w.qTimeText().Set("visible", mode == Nurikabe)
 	w.qRecordText().Set("visible", mode == Nurikabe)
 }
 
-func (w *window) MainMenuPressed() {
-	w.setGameMode(LevelSelect)
+func (w *window) MainMenuClicked() {
+	switch w.currentMode {
+	case DifficultySelect:
+	case LevelSelect:
+		w.setGameMode(DifficultySelect)
+	case Nurikabe:
+		w.setGameMode(LevelSelect)
+	}
 }
 
-func (w *window) Level(s string) {
-	w.currentBoard = s
-	w.loadLevel("levels/" + s + ".json")
+func (w *window) OnLevelClicked(file string) {
+	w.currentBoard = file
+	w.loadLevel("levels/" + w.currentDifficulty + "/" + file)
+}
+
+func (w *window) OnDifficultyClicked(s string) {
+	w.currentDifficulty = s
+	w.setGameMode(LevelSelect)
 }
 
 func (w *window) loadLevel(file string) {
@@ -128,38 +155,74 @@ func (w *window) buildNurikabeGrid() {
 	}
 }
 
-func (w *window) buildLevelSelect() {
-	w.qGameGrid().Set("columns", 5)
+func (w *window) buildDifficultySelect() {
+	w.qGameGrid().Set("columns", 1)
 
-	files, err := ioutil.ReadDir("levels/")
+	names := dirs("levels/")
+	w.btns = make([]qml.Object, len(names), len(names))
+	for i, name := range names {
+		w.btns[i] = w.btnComponent.Create(nil)
+		w.btns[i].Set("parent", w.qGameGrid())
+		w.btns[i].Set("text", name[2:])
+		w.btns[i].Set("file", name)
+		w.btns[i].Set("color", "silver")
+	}
+}
+
+func (w *window) buildLevelSelect() {
+	w.qGameGrid().Set("columns", 4)
+
+	names := files("levels/" + w.currentDifficulty)
+	w.btns = make([]qml.Object, len(names), len(names))
+	for i, name := range names {
+		_, ok := w.records.Stats[name]
+		w.btns[i] = w.lvlComponent.Create(nil)
+		w.btns[i].Set("parent", w.qGameGrid())
+		w.btns[i].Set("text", name[:len(name)-5]) //remove '.json' from name
+		w.btns[i].Set("file", name)
+		w.btns[i].Set("completed", ok)
+		w.btns[i].Set("color", "silver")
+	}
+}
+
+func dirs(dir string) []string {
+	files, err := ioutil.ReadDir(dir)
 	if err != nil {
 		panic(err)
 	}
 
 	l := len(files)
-	w.btns = make([]qml.Object, l, l)
+	names := make([]string, 0, l)
+	for _, f := range files {
+		if f.IsDir() {
+			names = append(names, f.Name())
+		}
+	}
+	sort.Strings(names)
+	return names
+}
+
+func files(dir string) []string {
+	files, err := ioutil.ReadDir(dir)
+	if err != nil {
+		panic(err)
+	}
+
+	l := len(files)
 	names := make([]string, l, l)
 	for i, f := range files {
-		names[i] = f.Name()[:len(f.Name())-5]
+		names[i] = f.Name()
 	}
 
 	sort.Strings(names)
-
-	for i, name := range names {
-		_, ok := w.records.Stats[name]
-		w.btns[i] = w.btnComponent.Create(nil)
-		w.btns[i].Set("parent", w.qGameGrid())
-		w.btns[i].Set("text", name)
-		w.btns[i].Set("completed", ok)
-		w.btns[i].Set("color", "silver")
-	}
+	return names
 }
 
 func (w *window) status(s string) {
 	w.qStatus().Set("text", s)
 }
 
-func (w *window) source(page string) {
+func (w *window) setSource(page string) {
 	w.qLoader().Set("source", page)
 }
 
@@ -209,6 +272,11 @@ func RunNurikabe(engine *qml.Engine) error {
 		return err
 	}
 
+	window.lvlComponent, err = engine.LoadFile("qml/level_select.qml")
+	if err != nil {
+		return err
+	}
+
 	window.btnComponent, err = engine.LoadFile("qml/btn.qml")
 	if err != nil {
 		return err
@@ -220,7 +288,7 @@ func RunNurikabe(engine *qml.Engine) error {
 		fmt.Println("Error loading stats", err)
 		window.records = stats.New()
 	}
-	window.setGameMode(LevelSelect)
+	window.setGameMode(DifficultySelect)
 
 	window.comp.Show()
 	window.comp.Wait()

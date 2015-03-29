@@ -80,7 +80,7 @@ ApplicationWindow {
                     objectName: "menuBtn"
                     anchors.left: parent.left
                     text: "Menu"
-                    onClicked: window.mainMenuPressed()
+                    onClicked: window.mainMenuClicked()
                 }
 
                 Text {

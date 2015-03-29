@@ -3,10 +3,11 @@ import QtQuick.Controls 1.0
 import QtQuick.Controls.Styles 1.0
 
 Button {
-    onClicked: window.onDifficultyClicked(file)
+    onClicked: window.onLevelClicked(file)
     property string color: "grey"
     property string file
-    width: 150
+    property bool completed: false
+    width: 50
 
     style: ButtonStyle {
         label: Text {
@@ -15,8 +16,8 @@ Button {
             color: "black"
             text: control.text
 
-            verticalAlignment: Text.AlignVCenter
-            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignHCenter
+            horizontalAlignment: Text.AlignLeft
             anchors.fill: parent
         }
 
@@ -28,9 +29,14 @@ Button {
                     GradientStop { position: 0 ; color: control.pressed ? Qt.darker(control.color) : control.color }
                     GradientStop { position: 1 ; color: control.pressed ? Qt.darker(control.color) : control.color }
                 }
-                anchors.fill: parent
+                Image {
+                    anchors.right: parent.right
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: 20
+                    height: 20
+                    source: control.completed ? "images/star.png" : "images/emptystar.png"
+                }
             }
         }
     }
-
 }
