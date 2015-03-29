@@ -20,13 +20,13 @@ const (
 type window struct {
 	g       *grid.Grid
 	v       validator.GridValidator
-	btns    []qml.Object
+	objs    []qml.Object
 	records *stats.Records
 
 	tileComponent qml.Object
 	lvlComponent  qml.Object
 	btnComponent  qml.Object
-	comp          *qml.Window
+	winComponent  *qml.Window
 
 	currentDifficulty string
 	currentBoard      string
@@ -55,6 +55,7 @@ func (w *window) setGameMode(mode GameMode) {
 	w.currentMode = mode
 	w.clearGrid()
 	w.setSource("qml/game.qml")
+
 	switch mode {
 	case Nurikabe:
 		w.status("Nurikabe - " + w.currentDifficulty[2:] + " " + w.currentBoard)
@@ -71,12 +72,14 @@ func (w *window) setGameMode(mode GameMode) {
 		w.qGameGrid().Set("spacing", 15)
 		w.qMenuBtn().Set("text", "Menu")
 		break
+
 	case DifficultySelect:
 		w.currentBoard = ""
 		w.currentDifficulty = ""
 		w.status("Nurikabe")
 		w.buildDifficultySelect()
 		w.qGameGrid().Set("spacing", 15)
+		break
 	}
 
 	w.qMenuBtn().Set("visible", mode != DifficultySelect)
@@ -123,11 +126,11 @@ func (w *window) loadLevel(file string) {
 }
 
 func (w *window) clearGrid() {
-	for i, _ := range w.btns {
-		w.btns[i].Set("visible", false)
-		w.btns[i].Destroy()
+	for i, _ := range w.objs {
+		w.objs[i].Set("visible", false)
+		w.objs[i].Destroy()
 	}
-	w.btns = nil
+	w.objs = nil
 }
 
 func (w *window) buildNurikabeGrid() {
@@ -135,23 +138,23 @@ func (w *window) buildNurikabeGrid() {
 	w.qGameGrid().Set("columns", w.g.Columns())
 
 	w.clearGrid()
-	w.btns = make([]qml.Object, l, l)
+	w.objs = make([]qml.Object, l, l)
 	dimension := w.g.Columns()
 	if rows := w.g.Rows(); rows > dimension {
 		dimension = rows
 	}
-	windowDim := w.comp.Root().Int("width") - 50
-	if height := w.comp.Root().Int("height"); height < windowDim {
+	windowDim := w.winComponent.Root().Int("width") - 50
+	if height := w.winComponent.Root().Int("height"); height < windowDim {
 		windowDim = height
 	}
 	dimension = windowDim / dimension
 	for i := 0; i < l; i++ {
-		w.btns[i] = w.tileComponent.Create(nil)
-		w.btns[i].Set("parent", w.qGameGrid())
-		w.btns[i].Set("index", i)
-		w.btns[i].Set("count", w.g.Count(i))
-		w.btns[i].Set("width", dimension)
-		w.btns[i].Set("height", dimension)
+		w.objs[i] = w.tileComponent.Create(nil)
+		w.objs[i].Set("parent", w.qGameGrid())
+		w.objs[i].Set("index", i)
+		w.objs[i].Set("count", w.g.Count(i))
+		w.objs[i].Set("width", dimension)
+		w.objs[i].Set("height", dimension)
 	}
 }
 
@@ -159,13 +162,13 @@ func (w *window) buildDifficultySelect() {
 	w.qGameGrid().Set("columns", 1)
 
 	names := dirs("levels/")
-	w.btns = make([]qml.Object, len(names), len(names))
+	w.objs = make([]qml.Object, len(names), len(names))
 	for i, name := range names {
-		w.btns[i] = w.btnComponent.Create(nil)
-		w.btns[i].Set("parent", w.qGameGrid())
-		w.btns[i].Set("text", name[2:])
-		w.btns[i].Set("file", name)
-		w.btns[i].Set("color", "silver")
+		w.objs[i] = w.btnComponent.Create(nil)
+		w.objs[i].Set("parent", w.qGameGrid())
+		w.objs[i].Set("text", name[2:])
+		w.objs[i].Set("file", name)
+		w.objs[i].Set("color", "silver")
 	}
 }
 
@@ -173,15 +176,15 @@ func (w *window) buildLevelSelect() {
 	w.qGameGrid().Set("columns", 4)
 
 	names := files("levels/" + w.currentDifficulty)
-	w.btns = make([]qml.Object, len(names), len(names))
+	w.objs = make([]qml.Object, len(names), len(names))
 	for i, name := range names {
 		_, ok := w.records.Stats[name]
-		w.btns[i] = w.lvlComponent.Create(nil)
-		w.btns[i].Set("parent", w.qGameGrid())
-		w.btns[i].Set("text", name[:len(name)-5]) //remove '.json' from name
-		w.btns[i].Set("file", name)
-		w.btns[i].Set("completed", ok)
-		w.btns[i].Set("color", "silver")
+		w.objs[i] = w.lvlComponent.Create(nil)
+		w.objs[i].Set("parent", w.qGameGrid())
+		w.objs[i].Set("text", name[:len(name)-5]) //remove '.json' from name
+		w.objs[i].Set("file", name)
+		w.objs[i].Set("completed", ok)
+		w.objs[i].Set("color", "silver")
 	}
 }
 
@@ -227,31 +230,31 @@ func (w *window) setSource(page string) {
 }
 
 func (w *window) qStatus() qml.Object {
-	return w.comp.Root().ObjectByName("statusText")
+	return w.winComponent.Root().ObjectByName("statusText")
 }
 
 func (w *window) qGameGrid() qml.Object {
-	return w.comp.Root().ObjectByName("grid")
+	return w.winComponent.Root().ObjectByName("grid")
 }
 
 func (w *window) qLoader() qml.Object {
-	return w.comp.Root().ObjectByName("pageLoader")
+	return w.winComponent.Root().ObjectByName("pageLoader")
 }
 
 func (w *window) qMenuBtn() qml.Object {
-	return w.comp.Root().ObjectByName("menuBtn")
+	return w.winComponent.Root().ObjectByName("menuBtn")
 }
 
 func (w *window) qStepsText() qml.Object {
-	return w.comp.Root().ObjectByName("movesText")
+	return w.winComponent.Root().ObjectByName("movesText")
 }
 
 func (w *window) qTimeText() qml.Object {
-	return w.comp.Root().ObjectByName("timerText")
+	return w.winComponent.Root().ObjectByName("timerText")
 }
 
 func (w *window) qRecordText() qml.Object {
-	return w.comp.Root().ObjectByName("recordText")
+	return w.winComponent.Root().ObjectByName("recordText")
 }
 
 func RunNurikabe(engine *qml.Engine) error {
@@ -263,8 +266,8 @@ func RunNurikabe(engine *qml.Engine) error {
 	}
 
 	window := &window{
-		v:    validator.NewNurikabe(),
-		comp: nurikabeComponent.CreateWindow(nil),
+		v:            validator.NewNurikabe(),
+		winComponent: nurikabeComponent.CreateWindow(nil),
 	}
 
 	window.tileComponent, err = engine.LoadFile("qml/tile.qml")
@@ -290,8 +293,8 @@ func RunNurikabe(engine *qml.Engine) error {
 	}
 	window.setGameMode(DifficultySelect)
 
-	window.comp.Show()
-	window.comp.Wait()
+	window.winComponent.Show()
+	window.winComponent.Wait()
 	window.records.Save(StatsFile)
 	return nil
 }
