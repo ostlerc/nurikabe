@@ -29,7 +29,7 @@ Rectangle {
 
     Text {
         anchors.centerIn: parent
-        font.pixelSize: 12
+        font.pixelSize: parent.width / 3
         color: "black"
         visible: count > 0
         text: count
