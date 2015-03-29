@@ -77,10 +77,10 @@ ApplicationWindow {
             RowLayout{
                 anchors.fill: parent
                 Button {
-                    objectName: "menuBtn"
+                    objectName: "toolBtn"
                     anchors.left: parent.left
                     text: "Menu"
-                    onClicked: window.mainMenuClicked()
+                    onClicked: window.toolButtonClicked()
                 }
 
                 Text {

@@ -6,24 +6,71 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"sort"
 	"strconv"
 )
 
 type Records struct {
-	Stats map[string]*LevelRecord `json:"stats"`
+	Stats  map[string]*LevelRecord `json:"stats"`
+	sorter map[string]int
+}
+
+func (r *Records) Level(key, difficulty string) (*LevelRecord, bool) {
+	v, ok := r.Stats[key+difficulty]
+	return v, ok
+}
+
+func (r *Records) Length() int {
+	return len(r.Stats)
+}
+
+func (r *Records) All() []*LevelRecord {
+	recs := make([]*LevelRecord, len(r.Stats), len(r.Stats))
+	i := 0
+	for _, rec := range r.Stats {
+		recs[i] = rec
+		i++
+	}
+	ret := &recordList{recs: recs}
+	sort.Sort(ret)
+	return ret.recs
+}
+
+type recordList struct {
+	recs []*LevelRecord
+}
+
+// Len is part of sort.Interface.
+func (r *recordList) Len() int {
+	return len(r.recs)
+}
+
+// Swap is part of sort.Interface.
+func (r *recordList) Swap(i, j int) {
+	r.recs[i], r.recs[j] = r.recs[j], r.recs[i]
+}
+
+// Less is part of sort.Interface. It is implemented by calling the "by" closure in the sorter.
+func (r *recordList) Less(i, j int) bool {
+	if r.recs[i].Difficulty == r.recs[j].Difficulty {
+		return r.recs[i].Name < r.recs[j].Name
+	}
+	return r.recs[i].Difficulty < r.recs[j].Difficulty
 }
 
 type LevelRecord struct {
-	Steps   int `json:"steps,omitempty"`
-	Seconds int `json:"seconds,omitempty"`
+	Name       string
+	Difficulty string
+	Steps      int `json:"steps,omitempty"`
+	Seconds    int `json:"seconds,omitempty"`
 }
 
-func New() *Records {
-	return &Records{Stats: make(map[string]*LevelRecord, 30)}
+func New(sortMap map[string]int) *Records {
+	return &Records{Stats: make(map[string]*LevelRecord, 30), sorter: sortMap}
 }
 
-func Load(file string) (*Records, error) {
-	recs := &Records{}
+func Load(file string, sorter map[string]int) (*Records, error) {
+	recs := &Records{sorter: sorter}
 	reader, err := os.Open(file)
 	if err != nil {
 		return nil, err
@@ -57,13 +104,14 @@ func (r *Records) Save(file string) error {
 }
 
 //Returns true if new stats were better than previous
-func (r *Records) Log(name string, steps, seconds int) bool {
-	rec, ok := r.Stats[name]
+func (r *Records) Log(name, difficulty string, steps, seconds int) bool {
+	key := name + difficulty
+	rec, ok := r.Stats[key]
 	defer func() {
-		r.Stats[name] = rec
+		r.Stats[key] = rec
 	}()
 	if !ok {
-		rec = &LevelRecord{Steps: steps, Seconds: seconds}
+		rec = &LevelRecord{Name: name, Difficulty: difficulty, Steps: steps, Seconds: seconds}
 		return true
 	}
 	if steps < rec.Steps {
