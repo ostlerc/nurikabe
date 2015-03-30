@@ -296,7 +296,6 @@ func (w *window) buildDifficultySelect() {
 func (w *window) buildRules() {
 	w.currentBoard = ""
 	w.setStatus("Nurikabe - Rules")
-	w.qGameGrid().Set("spacing", 15)
 	w.qToolBtn().Set("text", "Back")
 	w.qGameGrid().Set("columns", 4)
 
@@ -310,7 +309,7 @@ func (w *window) buildRules() {
 func (w *window) buildStats() {
 	w.currentBoard = ""
 	w.setStatus("Nurikabe - Records")
-	w.qGameGrid().Set("spacing", 15)
+	w.qGameGrid().Set("spacing", 7)
 	w.qToolBtn().Set("text", "Back")
 	w.qGameGrid().Set("columns", 4)
 
@@ -327,6 +326,9 @@ func (w *window) buildStats() {
 	headers := []string{"Difficulty", "Level", "Steps", "Seconds"}
 	for _, txt := range headers {
 		buildTxtBox(txt)
+	}
+	for range headers {
+		buildTxtBox("----------")
 	}
 
 	for _, rec := range w.records.All() {
