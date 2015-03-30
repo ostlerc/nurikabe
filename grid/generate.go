@@ -18,7 +18,7 @@ func (g *Grid) Generate(v validator.GridValidator, minGardens, gardenSize, base 
 		}
 
 		c := 0
-		for ; g.placeGarden(R.Intn(gardenSize)+base, tileMap); c++ {
+		for ; g.placeGarden(base, R.Intn(gardenSize)+base, tileMap); c++ {
 		}
 
 		if c < minGardens {
@@ -35,7 +35,7 @@ func (g *Grid) Generate(v validator.GridValidator, minGardens, gardenSize, base 
 	}
 }
 
-func (g *Grid) placeGarden(max int, tileMap mapset) bool {
+func (g *Grid) placeGarden(min, max int, tileMap mapset) bool {
 	i := -1
 	for c := 0; c < 10; c++ {
 		z := R.Intn(len(tileMap))
@@ -56,7 +56,7 @@ func (g *Grid) placeGarden(max int, tileMap mapset) bool {
 		}
 	}
 	tiles := g.markOpen(i, max, tileMap)
-	if len(tiles) < 2 {
+	if len(tiles) < min {
 		return false
 	}
 	g.tiles[i].open = true
