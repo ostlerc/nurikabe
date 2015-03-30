@@ -221,7 +221,7 @@ func (w *window) buildNurikabeGrid() {
 		dimension = rows
 	}
 	windowDim := w.winComponent.Root().Int("width") - 50
-	if height := w.winComponent.Root().Int("height"); height < windowDim {
+	if height := w.winComponent.Root().Int("height") - 60; height < windowDim {
 		windowDim = height
 	}
 	dimension = windowDim / dimension
