@@ -18,6 +18,7 @@ ApplicationWindow {
             border.width: 1
             Text {
                 id: statusText
+                property bool finished: false
                 anchors {
                     verticalCenter: parent.verticalCenter
                     horizontalCenter: parent.horizontalCenter
@@ -41,7 +42,8 @@ ApplicationWindow {
             }
             Text {
                 Timer {
-                    interval: 200; running: true; repeat: true
+                    interval: 200;  repeat: true
+                    running: !statusText.finished
                     onTriggered: timerText.seconds = Math.floor((new Date().getTime() - timerText.start.getTime()) / 1000)
                 }
                 id: timerText

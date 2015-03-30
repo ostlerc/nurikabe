@@ -164,7 +164,8 @@ func (w *window) TileChecked(i int) {
 	if w.v.CheckWin(w.g) {
 		w.records.Log(w.currentDifficulty, levelInt(w.currentBoard), w.qStepsText().Int("moves"), w.qTimeText().Int("seconds"))
 		w.records.Save(statsFile)
-		w.setStatus("Winner!")
+		w.setStatus("Nurikabe - Completed")
+		w.setTimer(false)
 	}
 }
 
@@ -210,6 +211,7 @@ func (w *window) buildNurikabeGrid() {
 	w.qRecordText().Set("text", w.records.String(w.currentDifficulty, levelInt(w.currentBoard)))
 	w.qGameGrid().Set("spacing", 1)
 	w.qToolBtn().Set("text", "Back")
+	w.setTimer(true)
 
 	l := w.g.Rows() * w.g.Columns()
 	w.qGameGrid().Set("columns", w.g.Columns())
@@ -347,6 +349,10 @@ func (w *window) loadStats() {
 		fmt.Println("Error loading stats", err)
 		w.records = stats.New(sorter)
 	}
+}
+
+func (w *window) setTimer(running bool) {
+	w.qStatus().Set("finished", !running)
 }
 
 func (w *window) setStatus(s string) {
