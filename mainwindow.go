@@ -119,7 +119,7 @@ func (w *window) setGameMode(mode gameMode) {
 func (w *window) ToolButtonClicked() {
 	switch w.currentMode {
 	case rulesPage:
-		w.setGameMode(mainMenu)
+		fallthrough
 	case statsPage:
 		w.setGameMode(mainMenu)
 	case difficultySelect:
