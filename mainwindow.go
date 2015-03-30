@@ -165,6 +165,7 @@ func (w *window) TileChecked(i int) {
 		w.records.Log(w.currentDifficulty, levelInt(w.currentBoard), w.qStepsText().Int("moves"), w.qTimeText().Int("seconds"))
 		w.records.Save(statsFile)
 		w.setStatus("Nurikabe - Completed")
+		w.qRecordText().Set("text", w.records.String(w.currentDifficulty, levelInt(w.currentBoard)))
 		w.setTimer(false)
 	}
 }
