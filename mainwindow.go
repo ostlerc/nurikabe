@@ -327,7 +327,7 @@ func (w *window) buildStats() {
 	for _, txt := range headers {
 		buildTxtBox(txt)
 	}
-	for range headers {
+	for _, _ = range headers {
 		buildTxtBox("----------")
 	}
 
